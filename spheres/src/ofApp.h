@@ -9,9 +9,11 @@ public:
 	ofIcoSpherePrimitive isp;
 	ofPoint pos, vel;
 	float z;
+	// convert sphere to mesh for manipulations
+	ofMesh* bmesh;
 	int index;
 	void draw(void);
-	void update(void);
+	void update(float x, float y);
 	void init(int index);
 
 };
@@ -22,9 +24,6 @@ class ofApp : public ofBaseApp{
 		void update();
 		void draw();
 		
-		ofIcoSpherePrimitive isp[NUM];
-		float z;
-
 		Ball b[NUM];
 
 		void keyPressed(int key);

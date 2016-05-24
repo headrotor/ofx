@@ -4,6 +4,7 @@
 void ofApp::setup() {
 	
 	int i;
+	//ofSetFullscreen(true);
 	for (i = 0; i < NUM; i++) {
 		b[i].init(i);
 	}	
@@ -11,10 +12,8 @@ void ofApp::setup() {
 
 //--------------------------------------------------------------
 void ofApp::update() {
-	z -= 0.5;
 	for (int i = 0; i < NUM; i++) {
-
-		b[i].update();
+		b[i].update(mouseX, mouseY);
 	}
 }
 //--------------------------------------------------------------
@@ -37,33 +36,18 @@ void ofApp::draw(){
 void Ball::init(int the_index) {
 	index = the_index;
 	isp.setRadius(50);
-	z = 0.0;
-	vector<ofMeshFace> triangles = isp.getMesh().getUniqueFaces();
-	for (int j = 0; j < triangles.size(); j++) {
-		const ofMeshFace &face = triangles[j];
-		ofVec3f one = face.getVertex(0);
-		
-		ofVec3f two = face.getVertex(1);
-		ofVec3f three = face.getVertex(2);
-	}
-}
-
-void Ball::draw() {
-	isp.drawWireframe();
-}
-
-void Ball::update() {
-	z += -0.5;
-	isp.setPosition(ofGetWidth()*.1*index, ofGetHeight()*.07*index, z);
-
-	ofMesh* mesh = isp.getMeshPtr();
-	int numVerts = (*mesh).getNumVertices();
+	z = (200 * index) - 2000;
+	pos.set(ofGetWidth()/2, ofGetHeight()/2, z);
+	bmesh = isp.getMeshPtr();
+	int numVerts = (*bmesh).getNumVertices();
+	ofColor green(0, 255, 0);
 	for (int i = 0; i<numVerts; ++i) {
-		ofVec3f vert = (*mesh).getVertex(i);
+		ofVec3f vert = 
+			(*bmesh).getVertex(i);
 
-		float time = ofGetElapsedTimef();
-		float timeScale = 5.0;
-		float displacementScale = 10;
+		//float time = ofGetElapsedTimef();
+		//float timeScale = 5.0;
+		//float displacementScale = 10;
 
 		// A typical design pattern for using Perlin noise uses a couple parameters:
 		// ofSignedNoise(time*timeScale+timeOffset)*displacementScale
@@ -82,16 +66,31 @@ void Ball::update() {
 		//vert.x += (ofSignedNoise(time*timeScale )) * displacementScale;
 		//vert.y += (ofSignedNoise(time*timeScale )) * displacementScale;
 		//vert.z += (ofSignedNoise(time*timeScale )) * displacementScale;
-		ofColor green(0, 255, 0);
-		(*mesh).addColor(green);
-		(*mesh).setVertex(i, vert);
+		(*bmesh).addColor(green);
+		(*bmesh).setVertex(i, vert);
 	}
-	
+
+}
+
+void Ball::draw() {
+	isp.drawWireframe();
+}
+
+void Ball::update(float x, float y) {
+	z -= 1.0;
+	if (z < -2000) {
+		z += 2000;
+		pos.set(x, y, z);
+	}
+	//pos.set(ofGetWidth()*.1*index, ofGetHeight()*.07*index, z);
+	pos.set(pos.x, pos.y, z);
+	isp.setPosition(pos);
 }
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
-
+	cout << "bye";
+	ofExit();
 }
 
 //--------------------------------------------------------------
