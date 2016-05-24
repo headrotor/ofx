@@ -15,11 +15,11 @@ void ofApp::setup() {
 	sunglasses.load("sunglasses.png");
 	ofEnableAlphaBlending();
 	id = 0;
-
+	drawcam = false;
 	for (int i = 0; i < NUM; i++) {
 		b[i].init(i);
 	}
-
+	ofBackground(ofColor(20, 20, 20));
 }
 
 void ofApp::update() {
@@ -50,12 +50,21 @@ void ofApp::update() {
 }
 
 void ofApp::draw() {
-	cam.draw(640, 0, -640, 480);
+	if (drawcam) {
+		ofSetColor(255, 255, 255);//stroke color  
+		cam.draw(640, 0, -640, 480);
+	}
 
 	for (int i = 0; i < finder.size(); i++) {
 		ofRectangle facerect = finder.getObjectSmoothed(i);
-		facerect.x = ofGetWidth() - facerect.x;
-		//ofDrawRectangle(facerect);
+		facerect.x = ofGetWidth() - facerect.x - facerect.width;
+		//ofFill();
+		//ofSetColor(255, 255, 255); //fill color  
+		//ofRect(x, y, width, height);
+		ofNoFill();
+		ofSetColor(0, 255, 255);//stroke color  
+								//ofRect(x, y, width, height);
+		ofDrawRectangle(facerect);
 	}
 
 	for (int i = 0; i < NUM; i++) {
@@ -75,6 +84,9 @@ void ofApp::keyPressed(int key) {
 		saveimg.saveImage(name);
 		id++;
 		cout << "P pressed\n";
+	}
+	if (key == 'f') {
+			drawcam = !drawcam;
 	}
 
 }
@@ -129,7 +141,7 @@ void Ball::update(float x, float y, bool face) {
 		pos.set(x, y, z);
 	}
 	//pos.set(ofGetWidth()*.1*index, ofGetHeight()*.07*index, z);
-	pos.set(pos.x, pos.y + 0.01*z, z);
+	pos.set(pos.x, pos.y + 0.007*z, z);
 	isp.setPosition(pos);
 }
 
