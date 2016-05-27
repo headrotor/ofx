@@ -11,38 +11,64 @@ void ofApp::setup() {
 	finder.getTracker().setSmoothingRate(.3);
 	cam.listDevices();
 	cam.setDeviceID(0);
-	cam.setup(640, 480);
-	sunglasses.load("sunglasses.png");
+	cam.setup(CAMW, CAMH);
+	//sunglasses.load("sunglasses.png");
 	ofEnableAlphaBlending();
 	id = 0;
+
+	cropr = ofRectangle(CROPX, CROPY, CROPW, CROPH);
+	grabimg.allocate(CAMW, CAMH, OF_IMAGE_COLOR);
+	cropimg.allocate(CROPW, CROPH, OF_IMAGE_GRAYSCALE);
+	colorimg.allocate(CAMW, CAMH);
+	grayimg.allocate(CAMW, CAMH);
 }
 
 void ofApp::update() {
 	cam.update();
 	if(cam.isFrameNew()) {
-		finder.update(cam);
+		grabimg.setFromPixels(cam.getPixels());
+		cropimg.cropFrom(grabimg, CROPX, CROPY, CROPH, CROPW);
+		colorimg.setFromPixels(grabimg.getPixels());
+
+		// convert to grayscale
+		grayimg = colorimg;
+		// do face detection in grayscale
+		finder.update(grayimg);
+		//cropimg = grayimg(cropr);
 	}
+
+	// look for motion in crop region
+
+
 }
 
 void ofApp::draw() {
-	cam.draw(0, 0);
+	grayimg.draw(0, 0);
+	cropimg.draw(0, 0);
+	ofSetHexColor(0xCCCCCC);
+	ofDrawRectRounded(cropr.x, cropr.y, cropr.width, cropr.height, 30.0);
 	
 	for(int i = 0; i < finder.size(); i++) {
 		ofRectangle object = finder.getObjectSmoothed(i);
-		sunglasses.setAnchorPercent(.5, .5);
+		//sunglasses.setAnchorPercent(.5, .5);
 		saveimg.setFromPixels(cam.getPixelsRef());
 		//float scaleAmount = .85 * object.width / sunglasses.getWidth();
-		float scaleAmount = 1.1 * object.width / sunglasses.getWidth();
-		ofPushMatrix();
-		ofTranslate(object.x + object.width / 2., object.y + object.height * 1.1);
-		ofScale(scaleAmount, scaleAmount);
-		sunglasses.draw(0, 0);
-		ofPopMatrix();
-		ofPushMatrix();
-		ofTranslate(object.getPosition());
-		ofDrawBitmapStringHighlight(ofToString(finder.getLabel(i)), 0, 0);
+		//float scaleAmount = 1.1 * object.width / sunglasses.getWidth();
+		ofNoFill();
+		ofSetHexColor(0xFFFF00);
+		ofDrawRectRounded(object.x, object.y, object.width, object.height, 30.0);
+
+		//ofPushMatrix();
+		//ofTranslate(object.x + object.width / 2., object.y + object.height * 1.1);
+		//ofScale(scaleAmount, scaleAmount);
+		//sunglasses.draw(0, 0);
+		//ofPopMatrix();
+
+		//ofPushMatrix();
+		//ofTranslate(object.getPosition());
+		//ofDrawBitmapStringHighlight(ofToString(finder.getLabel(i)), 0, 0);
 		//ofDrawLine(ofVec2f(), toOf(finder.getVelocity(i)) * 10);
-		ofPopMatrix();
+		//ofPopMatrix();
 	}
 }
 
