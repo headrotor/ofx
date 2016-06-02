@@ -3,6 +3,7 @@
 using namespace ofxCv;
 using namespace cv;
 
+
 void ofApp::setup() {
 	ofSetVerticalSync(true);
 	ofSetFrameRate(120);
@@ -11,7 +12,8 @@ void ofApp::setup() {
 	finder.getTracker().setSmoothingRate(.3);
 	cam.listDevices();
 	cam.setDeviceID(0);
-	cam.setup(640, 480);
+	//cam.setup(CAM_WIDTH, CAM_HEIGHT);
+	cam.setup(640,480);
 	sunglasses.load("sunglasses.png");
 	ofEnableAlphaBlending();
 	id = 0;
@@ -20,6 +22,9 @@ void ofApp::setup() {
 		b[i].init(i);
 	}
 	ofBackground(ofColor(20, 20, 20));
+
+	state.set_state(S_IDLE);
+	faceCenter.set(CAM_WIDTH/2.0,CAM_HEIGHT/2.0);
 }
 
 void ofApp::update() {
@@ -28,24 +33,45 @@ void ofApp::update() {
 	if (cam.isFrameNew()) {
 		finder.update(cam);
 	}
-	if (finder.size() > 0) {
-		int i = 0;
-		ofRectangle object = finder.getObjectSmoothed(i);
 
+
+	if (finder.size() > 0) {
+		
+		int i = 0;
+		
+		ofRectangle object = finder.getObjectSmoothed(i);
+		faceCenter = object.getCenter();
 		float xc = ofGetWidth() - object.x - object.width / 2;
 		float yc = object.y + object.height / 2;
 		for (int i = 0; i < NUM; i++) {
 
-			b[i].update(xc, yc, true);
+			b[i].update(state.state);
 		}
 
 	}
 	else {
 
 		for (int i = 0; i < NUM; i++) {
-			b[i].update(0, 0, false);
+			b[i].update(state.state);
 		}
 	}
+
+	switch (state.state) {
+	case S_IDLE:
+		if (finder.size()) {
+			state.set_state(S_FORWARD);
+		}
+		break;
+	case S_FORWARD:
+		if (finder.size() == 0) {
+			state.set_state(S_IDLE);
+		}
+		break;
+	case S_BACKWARD:
+		break;
+	}
+
+
 
 }
 
@@ -55,8 +81,13 @@ void ofApp::draw() {
 		cam.draw(640, 0, -640, 480);
 	}
 
-	for (int i = 0; i < finder.size(); i++) {
-		ofRectangle facerect = finder.getObjectSmoothed(i);
+	// future work, pick biggest face rectangle
+	//for (int i = 0; i < finder.size(); i++) {
+
+
+	if (finder.size() > 0) {
+		// pick first object
+		ofRectangle facerect = finder.getObjectSmoothed(0);
 		facerect.x = ofGetWidth() - facerect.x - facerect.width;
 		//ofFill();
 		//ofSetColor(255, 255, 255); //fill color  
@@ -64,7 +95,8 @@ void ofApp::draw() {
 		ofNoFill();
 		ofSetColor(0, 255, 255);//stroke color  
 								//ofRect(x, y, width, height);
-		ofDrawRectangle(facerect);
+		// future change to crosshair method
+		ofDrawRectRounded(facerect, 50);
 	}
 
 	for (int i = 0; i < NUM; i++) {
@@ -79,10 +111,10 @@ void ofApp::draw() {
 void ofApp::keyPressed(int key) {
 	if (key == 'p')
 	{
-		char name[256];
-		sprintf(name, "img%03d.png", id);
-		saveimg.saveImage(name);
-		id++;
+		//char name[256];
+		//sprintf(name, "img%03d.png", id);
+		//saveimg.saveImage(name);
+		//id++;
 		cout << "P pressed\n";
 	}
 	if (key == 'f') {
@@ -94,8 +126,9 @@ void ofApp::keyPressed(int key) {
 void Ball::init(int the_index) {
 	index = the_index;
 	isp.setRadius(50);
-	z = (200 * index) - 2000;
-	pos.set(ofGetWidth() / 2, ofGetHeight() / 2, z);
+	z = -2000;
+	vel.set(5.0, 5.0, 10.);
+	pos.set(0, 0, z);
 	bmesh = isp.getMeshPtr();
 	int numVerts = (*bmesh).getNumVertices();
 	ofColor green(0, 255, 0);
@@ -107,23 +140,7 @@ void Ball::init(int the_index) {
 		//float timeScale = 5.0;
 		//float displacementScale = 10;
 
-		// A typical design pattern for using Perlin noise uses a couple parameters:
-		// ofSignedNoise(time*timeScale+timeOffset)*displacementScale
-		//     ofSignedNoise(time) gives us noise values that change smoothly over
-		//         time
-		//     ofSignedNoise(time*timeScale) allows us to control the smoothness of
-		//         our noise (smaller timeScale, smoother values)
-		//     ofSignedNoise(time+timeOffset) allows us to use the same Perlin noise
-		//         function to control multiple things and have them look as if they
-		//         are moving independently
-		//     ofSignedNoise(time)*displacementScale allows us to change the bounds
-		//         of the noise from [-1, 1] to whatever we want
-		// Combine all of those parameters together, and you've got some nice
-		// control over your noise
 
-		//vert.x += (ofSignedNoise(time*timeScale )) * displacementScale;
-		//vert.y += (ofSignedNoise(time*timeScale )) * displacementScale;
-		//vert.z += (ofSignedNoise(time*timeScale )) * displacementScale;
 		(*bmesh).addColor(green);
 		(*bmesh).setVertex(i, vert);
 	}
@@ -134,14 +151,44 @@ void Ball::draw() {
 	isp.drawWireframe();
 }
 
-void Ball::update(float x, float y, bool face) {
-	z -= 10.0;
-	if (face && (z < -2000)) {
-		z += 2000;
-		pos.set(x, y, z);
-	}
+void Ball::update(int state) {
+	pos = pos + vel;
+	//z -= 10.0;
+	//if (face && (z < -2000)) {
+	//	z += 2000;
+	//	pos.set(x, y, z);
+	//}
 	//pos.set(ofGetWidth()*.1*index, ofGetHeight()*.07*index, z);
-	pos.set(pos.x, pos.y + 0.007*z, z);
+	//pos.set(pos.x, pos.y + 0.007*z, z);
 	isp.setPosition(pos);
 }
 
+void Ball::set_velxy(float xv, float yv) {
+	vel.x = xv;
+	vel.y = yv;
+}
+void Ball::set_velz(float zv) {
+	vel.z = zv;
+}
+
+//----------------------------- state machine handlind  -
+
+void StateMach::set_state(int next_state) {
+	state = next_state;
+	print_state();
+}
+
+void StateMach::print_state(void) {
+	switch (state) {
+	case S_IDLE:
+		cout << "State: IDLE\n";
+		break;	
+	case S_FORWARD:
+		cout << "State: FORWARD\n";
+		break;
+	case S_BACKWARD:
+		cout << "State: RETURN\n";
+		break;
+
+	}
+}

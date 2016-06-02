@@ -3,7 +3,7 @@
 #include "ofMain.h"
 #include "ofxCv.h"
 
-#define NUM 10
+#define NUM 1
 
 class  Ball {
 public:
@@ -14,11 +14,33 @@ public:
 	ofMesh* bmesh;
 	int index;
 	void draw(void);
-	void update(float x, float y, bool face);
+	void update(int state);
 	void init(int index);
 
+	void set_velxy(float vx, float vy);
+	void set_velz(float vz);
 };
 
+//cam dimensions
+
+#define CAM_WIDTH 640
+#define CAM_HEIGHT 480
+
+// state constants
+#define S_IDLE 1000
+#define S_FORWARD 1001
+#define S_BACKWARD 1002
+
+class StateMach {
+	// state machine for game transitions
+public:
+	int state;
+
+	void set_state(int next_state);
+
+	void print_state(void);
+
+};
 
 class ofApp : public ofBaseApp {
 public:
@@ -32,6 +54,12 @@ public:
 	bool drawcam;
 
 	Ball b[NUM];
+
+	StateMach state; 
+
+	ofPoint faceCenter;	
+
+
 
 	//void keyPressed(int key);
 	//void keyReleased(int key);
