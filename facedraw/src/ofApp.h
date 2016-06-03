@@ -3,13 +3,16 @@
 #include "ofMain.h"
 #include "ofxCv.h"
 
-#define NUM 1
+
+// Z positions for ball and goal
+#define Z_FAR -3000
+#define Z_NEAR -500
+#define Z_CLOSE -400
 
 class  Ball {
 public:
 	ofIcoSpherePrimitive isp;
 	ofPoint pos, vel;
-	float z;
 	// convert sphere to mesh for manipulations
 	ofMesh* bmesh;
 	int index;
@@ -19,10 +22,11 @@ public:
 
 	void set_velxy(float vx, float vy);
 	void set_velz(float vz);
+	void bounce(void);
+	void reset(void);
 };
 
 //cam dimensions
-
 #define CAM_WIDTH 640
 #define CAM_HEIGHT 480
 
@@ -35,11 +39,8 @@ class StateMach {
 	// state machine for game transitions
 public:
 	int state;
-
 	void set_state(int next_state);
-
 	void print_state(void);
-
 };
 
 class ofApp : public ofBaseApp {
@@ -53,7 +54,7 @@ public:
 
 	bool drawcam;
 
-	Ball b[NUM];
+	Ball b;
 
 	StateMach state; 
 

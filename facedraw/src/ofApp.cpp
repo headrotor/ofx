@@ -12,15 +12,13 @@ void ofApp::setup() {
 	finder.getTracker().setSmoothingRate(.3);
 	cam.listDevices();
 	cam.setDeviceID(0);
-	//cam.setup(CAM_WIDTH, CAM_HEIGHT);
-	cam.setup(640,480);
+	cam.setup(CAM_WIDTH, CAM_HEIGHT);
+	//cam.setup(640,480);
 	sunglasses.load("sunglasses.png");
 	ofEnableAlphaBlending();
 	id = 0;
 	drawcam = false;
-	for (int i = 0; i < NUM; i++) {
-		b[i].init(i);
-	}
+	b.init(0);
 	ofBackground(ofColor(20, 20, 20));
 
 	state.set_state(S_IDLE);
@@ -28,6 +26,8 @@ void ofApp::setup() {
 }
 
 void ofApp::update() {
+
+	ofRectangle faceRect;
 
 	cam.update();
 	if (cam.isFrameNew()) {
@@ -39,22 +39,21 @@ void ofApp::update() {
 		
 		int i = 0;
 		
-		ofRectangle object = finder.getObjectSmoothed(i);
-		faceCenter = object.getCenter();
-		float xc = ofGetWidth() - object.x - object.width / 2;
-		float yc = object.y + object.height / 2;
-		for (int i = 0; i < NUM; i++) {
-
-			b[i].update(state.state);
-		}
+		faceRect = finder.getObjectSmoothed(i);
+		faceCenter = faceRect.getCenter();
+		b.update(state.state);
 
 	}
 	else {
-
-		for (int i = 0; i < NUM; i++) {
-			b[i].update(state.state);
-		}
+		b.update(state.state);
 	}
+
+	// if we got here, we've missed
+	if (b.pos.z > Z_NEAR) {
+		cout << "MISS!\n";
+		b.reset();
+	}
+
 
 	switch (state.state) {
 	case S_IDLE:
@@ -66,12 +65,24 @@ void ofApp::update() {
 		if (finder.size() == 0) {
 			state.set_state(S_IDLE);
 		}
+		// test for collision
+		if (b.pos.z > Z_CLOSE) {
+			if (faceRect.inside(b.pos.x, b.pos.y)) {
+
+				cout << "BOUNCE\n";
+				state.set_state(S_BACKWARD);
+				b.bounce();
+				// WIN!
+			}
+		}
 		break;
 	case S_BACKWARD:
+		if (b.pos.z < -Z_FAR) {
+			b.reset();
+			state.set_state(S_IDLE);
+		}
 		break;
 	}
-
-
 
 }
 
@@ -83,7 +94,6 @@ void ofApp::draw() {
 
 	// future work, pick biggest face rectangle
 	//for (int i = 0; i < finder.size(); i++) {
-
 
 	if (finder.size() > 0) {
 		// pick first object
@@ -99,11 +109,8 @@ void ofApp::draw() {
 		ofDrawRectRounded(facerect, 50);
 	}
 
-	for (int i = 0; i < NUM; i++) {
-		b[i].draw();
-	}
 
-
+	b.draw();
 }
 
 
@@ -120,56 +127,9 @@ void ofApp::keyPressed(int key) {
 	if (key == 'f') {
 			drawcam = !drawcam;
 	}
-
 }
 
-void Ball::init(int the_index) {
-	index = the_index;
-	isp.setRadius(50);
-	z = -2000;
-	vel.set(5.0, 5.0, 10.);
-	pos.set(0, 0, z);
-	bmesh = isp.getMeshPtr();
-	int numVerts = (*bmesh).getNumVertices();
-	ofColor green(0, 255, 0);
-	for (int i = 0; i < numVerts; ++i) {
-		ofVec3f vert =
-			(*bmesh).getVertex(i);
 
-		//float time = ofGetElapsedTimef();
-		//float timeScale = 5.0;
-		//float displacementScale = 10;
-
-
-		(*bmesh).addColor(green);
-		(*bmesh).setVertex(i, vert);
-	}
-
-}
-
-void Ball::draw() {
-	isp.drawWireframe();
-}
-
-void Ball::update(int state) {
-	pos = pos + vel;
-	//z -= 10.0;
-	//if (face && (z < -2000)) {
-	//	z += 2000;
-	//	pos.set(x, y, z);
-	//}
-	//pos.set(ofGetWidth()*.1*index, ofGetHeight()*.07*index, z);
-	//pos.set(pos.x, pos.y + 0.007*z, z);
-	isp.setPosition(pos);
-}
-
-void Ball::set_velxy(float xv, float yv) {
-	vel.x = xv;
-	vel.y = yv;
-}
-void Ball::set_velz(float zv) {
-	vel.z = zv;
-}
 
 //----------------------------- state machine handlind  -
 
@@ -187,7 +147,7 @@ void StateMach::print_state(void) {
 		cout << "State: FORWARD\n";
 		break;
 	case S_BACKWARD:
-		cout << "State: RETURN\n";
+		cout << "State: BACKWARD\n";
 		break;
 
 	}
