@@ -66,7 +66,7 @@ void ofApp::update() {
 			state.set_state(S_IDLE);
 		}
 		// test for collision
-		if (b.pos.z > Z_CLOSE) {
+		if ((b.pos.z > Z_CLOSE) || TRUE) {
 			if (faceRect.inside(b.pos.x, b.pos.y)) {
 
 				cout << "BOUNCE\n";
@@ -77,7 +77,7 @@ void ofApp::update() {
 		}
 		break;
 	case S_BACKWARD:
-		if (b.pos.z < -Z_FAR) {
+		if (b.pos.z < Z_FAR) {
 			b.reset();
 			state.set_state(S_IDLE);
 		}
@@ -106,7 +106,10 @@ void ofApp::draw() {
 		ofSetColor(0, 255, 255);//stroke color  
 								//ofRect(x, y, width, height);
 		// future change to crosshair method
+		ofPushMatrix();
+		ofTranslate(0, 0, Z_CLOSE);
 		ofDrawRectRounded(facerect, 50);
+		ofPopMatrix();
 	}
 
 
@@ -149,6 +152,5 @@ void StateMach::print_state(void) {
 	case S_BACKWARD:
 		cout << "State: BACKWARD\n";
 		break;
-
 	}
 }

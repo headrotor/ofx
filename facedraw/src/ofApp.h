@@ -6,8 +6,8 @@
 
 // Z positions for ball and goal
 #define Z_FAR -3000
-#define Z_NEAR -500
-#define Z_CLOSE -400
+#define Z_NEAR -400
+#define Z_CLOSE -500
 
 class  Ball {
 public:
@@ -24,6 +24,7 @@ public:
 	void set_velz(float vz);
 	void bounce(void);
 	void reset(void);
+	void set_color(ofColor c);
 };
 
 //cam dimensions
