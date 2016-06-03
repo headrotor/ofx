@@ -16,37 +16,61 @@ void ofApp::setup() {
 	//cam.setup(640,480);
 	sunglasses.load("sunglasses.png");
 	ofEnableAlphaBlending();
-	id = 0;
 	drawcam = false;
-	b.init(0);
+	b.init();
 	ofBackground(ofColor(20, 20, 20));
 
-	state.set_state(S_IDLE);
+	reset_game();
 	faceCenter.set(CAM_WIDTH/2.0,CAM_HEIGHT/2.0);
+	ofRectMode(OF_RECTMODE_CENTER);
+
+}
+
+
+
+void ofApp::draw_world(void) {
+	// draw the score and the game world
+}
+
+void ofApp::reset_game(void) {
+	// draw the score and the game world
+	ofApp::drop_faces = 0;
+	score = 0;
+	paddleSize = 300;
+	state.set_state(S_IDLE);
+	b.reset();
+	cout << "RESET\n";
+
 }
 
 void ofApp::update() {
-
-	ofRectangle faceRect;
 
 	cam.update();
 	if (cam.isFrameNew()) {
 		finder.update(cam);
 	}
 
-
 	if (finder.size() > 0) {
 		
 		int i = 0;
-		
 		faceRect = finder.getObjectSmoothed(i);
-		faceCenter = faceRect.getCenter();
-		b.update(state.state);
+		// flip X coordinate
+		faceRect.x = ofGetWidth() - faceRect.x - faceRect.width;
+
+		ofPoint fc = faceRect.getCenter();
+		// scale center so we can reach the entire screen
+		float border = CAM_WIDTH ;
+		fc.x = ofMap(fc.x, 0., CAM_WIDTH, -border, CAM_WIDTH + border);
+		border = CAM_HEIGHT;
+		fc.y = ofMap(fc.y, 0., CAM_HEIGHT, - border,  CAM_HEIGHT + border);
+		fc.x -= paddleSize / 2;
+		fc.y -= paddleSize / 2;
+		paddleRect.set(fc.x,fc.y,paddleSize,paddleSize);
 
 	}
-	else {
-		b.update(state.state);
-	}
+
+	b.update(state.state);
+
 
 	// if we got here, we've missed
 	if (b.pos.z > Z_NEAR) {
@@ -59,17 +83,26 @@ void ofApp::update() {
 	case S_IDLE:
 		if (finder.size()) {
 			state.set_state(S_FORWARD);
+			drop_faces = 0;
 		}
-		break;
+	break;
+
 	case S_FORWARD:
 		if (finder.size() == 0) {
-			state.set_state(S_IDLE);
+			drop_faces++;
+			if (drop_faces > DROPPED_FACES_THRESH) {
+				drop_faces = 0;
+				reset_game();
+			}
 		}
-		// test for collision
-		if ((b.pos.z > Z_CLOSE) || TRUE) {
-			if (faceRect.inside(b.pos.x, b.pos.y)) {
+		else {
+			drop_faces = 0;
+		}
 
-				cout << "BOUNCE\n";
+		// test for collision
+		if ((b.pos.z > Z_CLOSE)) {
+			if (paddleRect.inside(b.pos.x, b.pos.y)) {
+				cout << "Bounce!\n";
 				state.set_state(S_BACKWARD);
 				b.bounce();
 				// WIN!
@@ -79,6 +112,8 @@ void ofApp::update() {
 	case S_BACKWARD:
 		if (b.pos.z < Z_FAR) {
 			b.reset();
+			score++;
+			cout << "WIN!" << "score " << score << "\n";
 			state.set_state(S_IDLE);
 		}
 		break;
@@ -89,16 +124,15 @@ void ofApp::update() {
 void ofApp::draw() {
 	if (drawcam) {
 		ofSetColor(255, 255, 255);//stroke color  
-		cam.draw(640, 0, -640, 480);
+		cam.draw(CAM_WIDTH, 0, -CAM_WIDTH, CAM_HEIGHT);
 	}
 
 	// future work, pick biggest face rectangle
 	//for (int i = 0; i < finder.size(); i++) {
 
-	if (finder.size() > 0) {
+	if (state.state != S_IDLE) {
 		// pick first object
-		ofRectangle facerect = finder.getObjectSmoothed(0);
-		facerect.x = ofGetWidth() - facerect.x - facerect.width;
+
 		//ofFill();
 		//ofSetColor(255, 255, 255); //fill color  
 		//ofRect(x, y, width, height);
@@ -106,12 +140,12 @@ void ofApp::draw() {
 		ofSetColor(0, 255, 255);//stroke color  
 								//ofRect(x, y, width, height);
 		// future change to crosshair method
+		ofDrawRectRounded(faceRect, 50);
 		ofPushMatrix();
 		ofTranslate(0, 0, Z_CLOSE);
-		ofDrawRectRounded(facerect, 50);
+		ofDrawRectangle(paddleRect);
 		ofPopMatrix();
 	}
-
 
 	b.draw();
 }

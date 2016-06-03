@@ -1,7 +1,6 @@
 #include "ofApp.h"
 
-void Ball::init(int the_index) {
-	index = the_index;
+void Ball::init(void) {
 	isp.setRadius(50);
 
 	ofColor green(0, 255, 0);
@@ -20,7 +19,6 @@ void Ball::set_color(ofColor c) {
 		//float timeScale = 5.0;
 		//float displacementScale = 10;
 
-
 		(*bmesh).addColor(c);
 		(*bmesh).setVertex(i, vert);
 	}
@@ -29,7 +27,7 @@ void Ball::set_color(ofColor c) {
 void Ball::reset(void) {
 	//vel.set(5.0, 5.0, 5);
 	//pos.set(0, 0, Z_FAR);
-	vel.set(0, 0, 5);
+	vel.set(ofRandomf()*1.0, ofRandomf()*0.5, 5);
 	pos.set(CAM_WIDTH/2., CAM_HEIGHT/2, Z_FAR);
 }
 void Ball::draw() {
@@ -53,6 +51,6 @@ void Ball::set_velz(float zv) {
 	vel.z = zv;
 }
 void Ball::bounce(void) {
-	vel.z = -5.0;
+	vel.z = -10.0;
 
 }
