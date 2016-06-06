@@ -5,6 +5,7 @@
 #define IMG_W 800
 #define IMG_H 600
 
+#define DEPTH 3
 class ofApp : public ofBaseApp{
 	public:
 		
@@ -12,6 +13,7 @@ class ofApp : public ofBaseApp{
 	void update();
 	void draw();
 
+	int toggle;
 	void updateWave(); // one update of wave equation
 	
 	void keyPressed(int key);
@@ -29,4 +31,10 @@ class ofApp : public ofBaseApp{
 	ofImage img;
 	ofImage U;
 	ofImage V;
+
+	ofFloatPixels Up;
+	ofFloatPixels Vp;
+	ofFloatPixels Wp;
+
+	ofFloatPixels fp[DEPTH];
 };
