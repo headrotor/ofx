@@ -2,12 +2,17 @@
 
 #include "ofMain.h"
 
+#define IMG_W 800
+#define IMG_H 600
+
 class ofApp : public ofBaseApp{
 	public:
 		
 	void setup();
 	void update();
 	void draw();
+
+	void updateWave(); // one update of wave equation
 	
 	void keyPressed(int key);
 	void keyReleased(int key);
@@ -21,5 +26,7 @@ class ofApp : public ofBaseApp{
 
     ofShader shader;
     ofPlanePrimitive plane;
-    ofImage img;
+	ofImage img;
+	ofImage U;
+	ofImage V;
 };

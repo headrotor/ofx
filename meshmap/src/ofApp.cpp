@@ -13,28 +13,63 @@ void ofApp::setup(){
 	}
 #endif
 
-    img.allocate(80, 60, OF_IMAGE_GRAYSCALE);
+	img.allocate(IMG_W / 10, IMG_H / 10, OF_IMAGE_GRAYSCALE);
+	U.allocate(IMG_W / 10, IMG_H / 10, OF_IMAGE_GRAYSCALE);
+	//U.clone(img);
+	V.clone(img);
 
-    plane.set(800, 600, 80, 60);
+
+    plane.set(IMG_H, IMG_W, IMG_W / 10, IMG_H / 10);
     plane.mapTexCoordsFromTexture(img.getTextureReference());
 }
 
+void ofApp::updateWave() {
+	unsigned char * Ipix = img.getPixels();
+	unsigned char * Upix = U.getPixels();
+	int w = img.getWidth();
+	int h = img.getHeight();
+	for (int y = 0; y<h; y++) {
+		for (int x = 0; x<w; x++) {
+			int i = y * w + x;
+			Upix[i] = Ipix[i];
+		}
+	}
+	U.update();
+}
+
+
+
+
 //--------------------------------------------------------------
-void ofApp::update(){
-    float noiseScale = ofMap(mouseX, 0, ofGetWidth(), 0, 0.1);
+void ofApp::update() {
+	float noiseScale = ofMap(mouseX, 0, ofGetWidth(), 0, 0.1);
     float noiseVel = ofGetElapsedTimef();
     
     unsigned char * pixels = img.getPixels();
     int w = img.getWidth();
     int h = img.getHeight();
-    for(int y=0; y<h; y++) {
+    /*
+	for(int y=0; y<h; y++) {
         for(int x=0; x<w; x++) {
             int i = y * w + x;
             float noiseVelue = ofNoise(x * noiseScale, y * noiseScale, noiseVel);
             pixels[i] = 255 * noiseVelue;
         }
-    }
+    }*/
+	for (int y = 0; y<h; y++) {
+		for (int x = 0; x<w; x++) {
+			int i = y * w + x;
+			float d = sqrt((x - mouseX/10)*(x-mouseX/10) + (y-mouseY/10)*(y-mouseY/10));
+			if ((d < 10) && ofGetMousePressed()) {
+				pixels[i] = 255 - 2.5*d*d;
+			}
+			else {
+				pixels[i] = 0;
+					}
+		}
+	}
     img.update();
+	updateWave();
 }
 
 //--------------------------------------------------------------
@@ -64,8 +99,10 @@ void ofApp::draw(){
     
     shader.end();
 
-    ofSetColor(ofColor::white);
-    img.draw(0, 0);
+	ofSetColor(ofColor::white);
+	img.draw(0, 0);
+	ofSetColor(ofColor::white);
+	U.draw(img.getWidth(), 0);
 }
 
 //--------------------------------------------------------------
