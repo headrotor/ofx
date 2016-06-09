@@ -71,7 +71,7 @@ void ofApp::updateWave() {
 			}
 			else {
 				//finally subtract v(t-1) with damping function
-				vnew[i] = 0.98*(v - vvold[i]);
+				vnew[i] = 0.99*(v - vvold[i]);
 			}
 		}
 	}
@@ -79,8 +79,11 @@ void ofApp::updateWave() {
 	for (int y = 0; y<h; y++) {
 		for (int x = 0; x<w; x++) {
 			int i = y * w + x;
-			Upix[i] = 128 + (unsigned char)(127 * vnew[i]);
-			
+			float scale = 1.5;
+			float temp = ofClamp(vnew[i], -scale, scale);
+			//Upix[i] = 128 + (unsigned char)(127 * vnew[i]);
+			Upix[i] = int(ofMap(temp, -scale, scale, 0, 255));
+
 		}
 	}
 
