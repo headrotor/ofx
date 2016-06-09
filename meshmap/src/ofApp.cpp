@@ -153,8 +153,9 @@ void ofApp::update() {
 
 			float d = sqrt((x - lx)*(x - lx) + (y - ly)*(y -ly));
 
-			if ((d < 10) && ofGetMousePressed()) {
-				pixels[i] = 255 - 2.5*d*d;
+			//if ((d < 10) && ofGetMousePressed()) {
+			if ((d < 10)) {
+					pixels[i] = 255 - 2.5*d*d;
 			}
 			else {
 				pixels[i] = 0;

@@ -122,6 +122,10 @@ void ofApp::update() {
 }
 
 void ofApp::draw() {
+
+	float spinX = sin(ofGetElapsedTimef()*.35f);
+	float spinY = cos(ofGetElapsedTimef()*.075f);
+
 	if (drawcam) {
 		ofSetColor(255, 255, 255);//stroke color  
 		cam.draw(CAM_WIDTH, 0, -CAM_WIDTH, CAM_HEIGHT);
@@ -140,12 +144,13 @@ void ofApp::draw() {
 		ofSetColor(0, 255, 255);//stroke color  
 								//ofRect(x, y, width, height);
 		// future change to crosshair method
-		ofDrawRectRounded(faceRect, 50);
+		//ofDrawRectRounded(faceRect, 50);
 		ofPushMatrix();
 		ofTranslate(0, 0, Z_CLOSE);
-		ofDrawRectangle(paddleRect);
+		ofDrawRectRounded(paddleRect,50);
 		ofPopMatrix();
 	}
+
 
 	b.draw();
 }

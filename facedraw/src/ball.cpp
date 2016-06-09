@@ -2,7 +2,7 @@
 
 void Ball::init(void) {
 	isp.setRadius(50);
-
+	isp.setResolution(1);
 	ofColor green(0, 255, 0);
 	set_color(green);
 	reset();
@@ -31,6 +31,7 @@ void Ball::reset(void) {
 	pos.set(CAM_WIDTH/2., CAM_HEIGHT/2, Z_FAR);
 }
 void Ball::draw() {
+
 	isp.drawWireframe();
 }
 
@@ -39,6 +40,10 @@ void Ball::update(int state) {
 	//pos.set(ofGetWidth()*.1*index, ofGetHeight()*.07*index, z);
 	//pos.set(pos.x, pos.y + 0.007*z, z);
 	isp.setPosition(pos);
+	float spinX = sin(ofGetElapsedTimef()*.03f);
+	float spinY = cos(ofGetElapsedTimef()*.005f);
+	isp.rotate(spinX, 1.0, 0.0, 0.0);
+	isp.rotate(spinY, 0, 1.0, 0.0);
 
 	//cout << "ball " << pos.z << "\n";
 }
