@@ -49,7 +49,8 @@ void ofApp::updateWave() {
 	int w = img.getWidth();
 	int h = img.getHeight();
 
-
+	// kind of like tripple-buffering: we need times t+1, t, and t-1
+	// so rotate through the stack of three floating point images...
 	toggle = (toggle + 1) % DEPTH;
 
 	float * vnew  = fp[(toggle + 2) % DEPTH].getData();
@@ -60,13 +61,17 @@ void ofApp::updateWave() {
 		for (int x = 1; x < w - 1; x++) {
 			int i = y * w + x;
 			//vfp[i] = 1- (float)Ipix[i] / 255.0;
+			// for this pixel, first compute Laplacian
 			float v = 0.3*(vold[x - 1 + y*w] + vold[x + 1 + y*w] + vold[x + (y - 1)*w] + vold[x + (y + 1)*w] - 4 * vold[i]);
+		   // then add 2*v(t)
 			v += 2 * vold[i];
 			if (Ipix[i] > 0) {
+				// forcing function
 				vnew[i] = (float)Ipix[i] / 255.0;
 			}
 			else {
-				vnew[i] = 0.98*v - vvold[i];
+				//finally subtract v(t-1) with damping function
+				vnew[i] = 0.98*(v - vvold[i]);
 			}
 		}
 	}
