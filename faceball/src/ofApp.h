@@ -40,6 +40,7 @@ public:
 #define S_IDLE 1000
 #define S_FORWARD 1001
 #define S_BACKWARD 1002
+#define S_CELEBRATE 1003
 
 class StateMach {
 	// state machine for game transitions
@@ -65,6 +66,10 @@ public:
 	void draw_world();
 	// start new game
 	void reset_game();
+
+	// update the celebration animation
+	void update_celebrate(int win);
+	int celebrate; 
 
 	void keyPressed(int key);
 

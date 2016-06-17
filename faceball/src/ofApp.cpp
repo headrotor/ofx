@@ -27,7 +27,7 @@ void ofApp::setup() {
 
 	// set up font  
 	//font.loadFont("verdana.ttf", 36, true, false, true, 0.1);
-	font.loadFont("Hyperspace.otf", 24, true, false, true, 0.1);
+	font.loadFont("Hyperspace.otf", 36, true, false, true, 0.1);
 
 	// set up field
 	/*field.addVertex(ofVec3f(20, 20));
@@ -48,30 +48,6 @@ void ofApp::setup() {
 
 
 
-void ofApp::draw_world(void) {
-	// draw the score and the game world
-
-
-	// draw field grid
-
-
-	//draw score
-	ofPushMatrix();
-	ofTranslate(0, 0, 0);
-	ofSetColor(0, 255, 0);//stroke color 
-	sprintf(score_str, "SCORE %02d", score);
-	font.drawString(score_str, ofGetWidth() - 200, 30);
-	//font.drawStringAsShapes("test", ofGetWidth() / 2 + 20, ofGetHeight() / 2);
-	ofPopMatrix();
-
-
-	ofPushMatrix();
-	//ofRotateZ(90.);
-	ofTranslate(ofGetWidth() / 2., ofGetHeight() / 2., Z_FAR);
-	field.drawWireframe();
-	ofPopMatrix();
-
-}
 
 void ofApp::reset_game(void) {
 	// draw the score and the game world
@@ -148,19 +124,83 @@ void ofApp::update() {
 				b.bounce();
 				// WIN!
 			}
+			else {
+				state.set_state(S_IDLE);
+			}
+
 		}
 		break;
 	case S_BACKWARD:
 		if (b.pos.z < Z_FAR) {
 			b.reset();
+			celebrate = Z_FAR/2;
 			score++;
 			cout << "WIN!" << "score " << score << "\n";
+			state.set_state(S_CELEBRATE);
+		}
+		break;
+	case S_CELEBRATE:
+		if (celebrate > 300) {
+			b.reset();
 			state.set_state(S_IDLE);
 		}
 		break;
+
 	}
 
 }
+void ofApp::draw_world(void) {
+	// draw the score and the game world
+
+
+	// draw field grid
+
+
+	//draw score
+	ofPushMatrix();
+	ofTranslate(0, 0, 0);
+	ofSetColor(0, 255, 0);//stroke color 
+	sprintf(score_str, "SCORE %02d", score);
+	font.drawString(score_str, ofGetWidth() - 200, 30);
+	//font.drawStringAsShapes("test", ofGetWidth() / 2 + 20, ofGetHeight() / 2);
+	ofPopMatrix();
+
+
+	ofPushMatrix();
+	ofTranslate(ofGetWidth() / 2., 0, Z_FAR / 2);
+	//ofTranslate(ofGetWidth() / 2., ofGetHeight() / 2., 30);
+	ofRotateX(90.);
+	field.drawWireframe();
+	ofPopMatrix();
+
+
+
+}
+
+
+void ofApp::update_celebrate(int win) {
+
+	celebrate += 10;
+
+	ofPushMatrix();
+	//ofTranslate(ofGetWidth() / 2., ofGetHeight() / 2., Z_FAR);
+
+
+	ofTranslate(ofGetWidth() / 2., ofGetHeight() / 2., celebrate);
+	if (win) {
+		ofRotateX(float(celebrate));
+		ofRectangle rect = font.getStringBoundingBox("GOAL!!!", 0, 0);
+		font.drawStringAsShapes("GOAL!!!", -rect.width/2, 0);
+
+	}
+	else {
+		font.drawStringAsShapes("MISS", 0, 0);
+	}
+	//field.drawWireframe();
+	ofPopMatrix();
+
+}
+
 
 void ofApp::draw() {
 	ofDrawBitmapString("fps: " + ofToString(ofGetFrameRate()), 10, 10);
@@ -176,25 +216,27 @@ void ofApp::draw() {
 	// future work, pick biggest face rectangle
 	//for (int i = 0; i < finder.size(); i++) {
 
-	if (state.state != S_IDLE) {
-		// pick first object
+	// draw paddle
+	ofSetColor(0, 255, 255);//stroke color  
+							//ofRect(x, y, width, height);
+							// future change to crosshair method
+							//ofDrawRectRounded(faceRect, 50);
+	ofNoFill();
+	ofPushMatrix();
+	ofTranslate(0, 0, Z_CLOSE);
+	ofDrawRectRounded(paddleRect, 50);
+	ofPopMatrix();
 
-		//ofFill();
-		//ofSetColor(255, 255, 255); //fill color  
-		//ofRect(x, y, width, height);
-		ofNoFill();
-		ofSetColor(0, 255, 255);//stroke color  
-								//ofRect(x, y, width, height);
-		// future change to crosshair method
-		//ofDrawRectRounded(faceRect, 50);
-		ofPushMatrix();
-		ofTranslate(0, 0, Z_CLOSE);
-		ofDrawRectRounded(paddleRect, 50);
-		ofPopMatrix();
+	switch (state.state) {
+	case S_FORWARD:
+	case S_BACKWARD:
+	case S_IDLE:
+		b.draw();
+		break;
+	case S_CELEBRATE:
+		update_celebrate(1);
+		break;
 	}
-
-
-	b.draw();
 
 
 }
@@ -242,6 +284,9 @@ void StateMach::print_state(void) {
 		break;
 	case S_BACKWARD:
 		cout << "State: BACKWARD\n";
+		break;
+	case S_CELEBRATE:
+		cout << "State: CELEBRATE\n";
 		break;
 	}
 }
