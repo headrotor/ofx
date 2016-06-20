@@ -24,6 +24,7 @@ void ofApp::setup() {
 }
 
 void ofApp::update() {
+	ofVec2f vel;
 	cam.update();
 	if(cam.isFrameNew()) {
 		grabimg.setFromPixels(cam.getPixels());
@@ -35,6 +36,16 @@ void ofApp::update() {
 		// do face detection in grayscale
 		finder.update(grayimg);
 		//cropimg = grayimg(cropr);
+		if (finder.size() > 0) {
+			cv::Vec2f v = finder.getVelocity(0);
+			vel = toOf(v);
+			if (vel.length() > 1.0) {
+				cout << "Yvel:" << setprecision(4) << vel.y;
+				//cout << "Yvel:" <<  vel.y / vel.length();
+				cout << "\n";
+			}
+		}
+
 	}
 
 	// look for motion in crop region
@@ -43,6 +54,7 @@ void ofApp::update() {
 }
 
 void ofApp::draw() {
+	ofSetHexColor(0xFFFFFF);
 	grayimg.draw(0, 0);
 	cropimg.draw(0, 0);
 	ofSetHexColor(0xCCCCCC);

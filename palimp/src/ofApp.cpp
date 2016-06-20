@@ -16,19 +16,20 @@ void ofApp::setup() {
 	ofEnableAlphaBlending();
 	id = 0;
 
-	cropr = ofRectangle(CROPX, CROPY, CROPW, CROPH);
 	grabimg.allocate(CAMW, CAMH, OF_IMAGE_COLOR);
-	cropimg.allocate(CROPW, CROPH, OF_IMAGE_GRAYSCALE);
 	colorimg.allocate(CAMW, CAMH);
 	grayimg.allocate(CAMW, CAMH);
+
+	// state machine handling
+	state.set(S_IDLE);
+
 }
 
 void ofApp::update() {
 	ofVec2f vel;
 	cam.update();
-	if(cam.isFrameNew()) {
+	if (cam.isFrameNew()) {
 		grabimg.setFromPixels(cam.getPixels());
-		cropimg.cropFrom(grabimg, CROPX, CROPY, CROPH, CROPW);
 		colorimg.setFromPixels(grabimg.getPixels());
 
 		// convert to grayscale
@@ -48,6 +49,28 @@ void ofApp::update() {
 
 	}
 
+	// state machine handling
+
+	switch (state.state) {
+	case S_IDLE:
+		if (finder.size()) {
+			// found face, so go to capture mode
+			state.set(S_CAPTURE);
+		}
+		break;
+
+	case S_CAPTURE:
+		if (finder.size() == 0) {
+			cout << "timer: " << state.time_elapsed();
+			if (state.timeout()) {
+				state.set(S_IDLE);
+			}
+		}
+		else {
+			state.reset_timer();
+		}
+
+	}
 	// look for motion in crop region
 
 
@@ -56,11 +79,9 @@ void ofApp::update() {
 void ofApp::draw() {
 	ofSetHexColor(0xFFFFFF);
 	grayimg.draw(0, 0);
-	cropimg.draw(0, 0);
 	ofSetHexColor(0xCCCCCC);
-	ofDrawRectRounded(cropr.x, cropr.y, cropr.width, cropr.height, 30.0);
-	
-	for(int i = 0; i < finder.size(); i++) {
+
+	for (int i = 0; i < finder.size(); i++) {
 		ofRectangle object = finder.getObjectSmoothed(i);
 		//sunglasses.setAnchorPercent(.5, .5);
 		saveimg.setFromPixels(cam.getPixelsRef());
@@ -96,4 +117,58 @@ void ofApp::keyPressed(int key) {
 		cout << "P pressed\n";
 	}
 
+}
+
+
+void StateMach::set(int next_state) {
+	reset_timer();
+	state = next_state;
+	// default no timeout
+	timeout_time = -1.;
+
+	// do state-dependent things
+	switch (state) {
+	case S_IDLE:
+		ofResetElapsedTimeCounter();
+		reset_timer();
+		break;
+	case S_CAPTURE:
+		timeout_time = 5.;
+		break;
+	}
+	print();
+}
+
+void StateMach::reset_timer(void) {
+	start_time = ofGetElapsedTimef();
+}
+
+float StateMach::time_elapsed(void) {
+	return(ofGetElapsedTimef() - start_time);
+}
+
+bool StateMach::timeout(void) {
+	if (timeout_time < 0)
+		return(false);
+	if (time_elapsed() >  timeout_time)
+		return(true);
+	return(false);
+}
+
+void StateMach::print(void) {
+
+	switch (state) {
+	case S_IDLE:
+		cout << "State: IDLE\n";
+		break;
+	case S_CAPTURE:
+		cout << "State: CAPTURE\n";
+		break;
+	case S_SAVE:
+		cout << "State: SAVE\n";
+		break;
+	case S_INTERIM:
+		cout << "State: CELEBRATE\n";
+		break;
+	}
 }
