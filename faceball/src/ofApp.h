@@ -9,6 +9,8 @@
 #define Z_NEAR -400
 #define Z_CLOSE -500
 
+#define Z_FIELD -1000
+
 // miss this many frames in a row to drop faces
 #define DROPPED_FACES_THRESH 30
 
@@ -26,9 +28,11 @@ public:
 
 	void set_velxy(float vx, float vy);
 	void set_velz(float vz);
-	void bounce(void);
+	void bounce(ofVec2f spin);
 	void reset(void);
 	void set_color(ofColor c);
+
+	ofPoint getCenter();  // get x, y center
 };
 
 //cam dimensions
@@ -65,7 +69,16 @@ public:
 	// draw the game world
 	void draw_world();
 	// start new game
+	void draw_world_old();
+	// start new game
 	void reset_game();
+
+
+	// flags for testing behaviors
+	// use face velocity to control ball direction
+	bool vel_flag = false;
+	// use location to control ball direction
+	bool loc_flag = true;
 
 	// update the celebration animation
 	void update_celebrate(int win);
@@ -87,7 +100,12 @@ public:
 	// size of paddle, centered at faceCenter
 	ofRectangle paddleRect;
 	// location of face in image
+
+	ofRectangle goalRect;
+	// location of goal
+
 	ofRectangle faceRect;
+
 	float paddleSize;
 
 

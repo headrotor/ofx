@@ -35,6 +35,10 @@ void Ball::draw() {
 	isp.drawWireframe();
 }
 
+ofPoint Ball::getCenter() {
+	return ofPoint(pos.x, pos.y);
+}
+
 void Ball::update(int state) {
 	pos = pos + vel;
 	//pos.set(ofGetWidth()*.1*index, ofGetHeight()*.07*index, z);
@@ -55,7 +59,10 @@ void Ball::set_velxy(float xv, float yv) {
 void Ball::set_velz(float zv) {
 	vel.z = zv;
 }
-void Ball::bounce(void) {
+void Ball::bounce(ofVec2f spin) {
+	cout << "bounce spin: " << spin;
+	vel.x = spin.x;
+	vel.y = spin.y;
 	vel.z = -10.0;
 
 }

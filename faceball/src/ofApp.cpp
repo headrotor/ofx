@@ -42,8 +42,10 @@ void ofApp::setup() {
 */
 
 
-	field = field.plane(1000, 500, 8, 4);
+	field = field.plane(500, 1000, 8, 4);
 	//field.setMode(OF_PRIMITIVE_TRIANGLE_FAN);
+	goalRect.set(0, 0,200,100);
+
 }
 
 
@@ -121,8 +123,14 @@ void ofApp::update() {
 			if (paddleRect.inside(b.pos.x, b.pos.y)) {
 				cout << "Bounce!\n";
 				state.set_state(S_BACKWARD);
-				b.bounce();
-				// WIN!
+				if (loc_flag) {
+					// give ball vector depending on distance from paddle center
+					ofPoint bc = b.getCenter();
+					ofPoint pc = paddleRect.getCenter();
+					ofVec2f spin = pc - bc;
+					b.bounce(spin/-20.0);
+
+				}				
 			}
 			else {
 				state.set_state(S_IDLE);
@@ -149,7 +157,7 @@ void ofApp::update() {
 	}
 
 }
-void ofApp::draw_world(void) {
+void ofApp::draw_world_old(void) {
 	// draw the score and the game world
 
 
@@ -161,20 +169,56 @@ void ofApp::draw_world(void) {
 	ofTranslate(0, 0, 0);
 	ofSetColor(0, 255, 0);//stroke color 
 	sprintf(score_str, "SCORE %02d", score);
-	font.drawString(score_str, ofGetWidth() - 200, 30);
+	font.drawString(score_str, ofGetWidth() - 220, 50);
 	//font.drawStringAsShapes("test", ofGetWidth() / 2 + 20, ofGetHeight() / 2);
 	ofPopMatrix();
 
-
+	// draw field
 	ofPushMatrix();
-	ofTranslate(ofGetWidth() / 2., 0, Z_FAR / 2);
+	ofTranslate(ofGetWidth() / 2., ofGetHeight(), -400);
 	//ofTranslate(ofGetWidth() / 2., ofGetHeight() / 2., 30);
 	ofRotateX(90.);
 	field.drawWireframe();
 	ofPopMatrix();
 
+	// draw goal
+	for (float z = Z_NEAR; z > Z_FAR; z -= 50) {
+		cout << "drawing at " << z;
+		ofPushMatrix();
+		ofSetColor(255, 0, 255); //stroke color 
+		ofTranslate(ofGetWidth() / 2., ofGetHeight() / .2, z);
+		ofDrawRectRounded(goalRect, 20);
+		ofRectangle foo;
+		foo.set(0., 0., 100., 100.);
+		ofDrawRectRounded(foo, 10);
+		ofDrawRectRounded(paddleRect, 10);
+		ofPopMatrix();
+	}
+}
+
+void ofApp::draw_world(void) {
+	// draw the score and the game world
 
 
+	// draw field grid
+	ofPushMatrix();
+	ofTranslate(0, 0, Z_CLOSE);
+	ofDrawRectRounded(paddleRect, 50);
+	ofPopMatrix();
+
+	// draw goal
+	for (float z = Z_NEAR; z > Z_FAR; z -= 50) {
+		cout << "drawing at " << z;
+		ofPushMatrix();
+		ofSetColor(255, 0, 255); //stroke color 
+		ofTranslate(0., 0., z);
+		ofDrawRectRounded(goalRect, 20);
+		ofRectangle foo;
+		foo.set(0., 0., 100., 100.);
+		ofDrawRectRounded(foo, 10);
+		ofDrawRectRounded(paddleRect, 10);
+		ofPopMatrix();
+	}
 }
 
 
@@ -222,10 +266,10 @@ void ofApp::draw() {
 							// future change to crosshair method
 							//ofDrawRectRounded(faceRect, 50);
 	ofNoFill();
-	ofPushMatrix();
-	ofTranslate(0, 0, Z_CLOSE);
-	ofDrawRectRounded(paddleRect, 50);
-	ofPopMatrix();
+	//ofPushMatrix();
+	//ofTranslate(0, 0, Z_CLOSE);
+	//ofDrawRectRounded(paddleRect, 50);
+	//ofPopMatrix();
 
 	switch (state.state) {
 	case S_FORWARD:
