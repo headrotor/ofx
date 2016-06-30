@@ -41,14 +41,12 @@ void ofApp::setup() {
 	field.setMode(OF_PRIMITIVE_TRIANGLE_FAN);
 */
 
-
-	field = field.plane(500, 1000, 8, 4);
+	float f_width = fabs(Z_FIELD_END - Z_FIELD_START);
+	field = field.plane(f_width / 2., f_width, 11, 21);
 	//field.setMode(OF_PRIMITIVE_TRIANGLE_FAN);
-	goalRect.set(0, 0,200,100);
+	goalRect.set(ofGetWidth() / 2 - 200., ofGetHeight() - 100, 400, 200);
 
 }
-
-
 
 
 void ofApp::reset_game(void) {
@@ -128,9 +126,9 @@ void ofApp::update() {
 					ofPoint bc = b.getCenter();
 					ofPoint pc = paddleRect.getCenter();
 					ofVec2f spin = pc - bc;
-					b.bounce(spin/-20.0);
+					b.bounce(spin / -20.0);
 
-				}				
+				}
 			}
 			else {
 				state.set_state(S_IDLE);
@@ -141,7 +139,7 @@ void ofApp::update() {
 	case S_BACKWARD:
 		if (b.pos.z < Z_FAR) {
 			b.reset();
-			celebrate = Z_FAR/2;
+			celebrate = Z_FAR / 2;
 			score++;
 			cout << "WIN!" << "score " << score << "\n";
 			state.set_state(S_CELEBRATE);
@@ -157,13 +155,9 @@ void ofApp::update() {
 	}
 
 }
-void ofApp::draw_world_old(void) {
+
+void ofApp::draw_world(void) {
 	// draw the score and the game world
-
-
-	// draw field grid
-
-
 	//draw score
 	ofPushMatrix();
 	ofTranslate(0, 0, 0);
@@ -173,77 +167,26 @@ void ofApp::draw_world_old(void) {
 	//font.drawStringAsShapes("test", ofGetWidth() / 2 + 20, ofGetHeight() / 2);
 	ofPopMatrix();
 
+	// draw goal
+	ofPushMatrix();
+	ofSetColor(0, 128, 0, 128);
+	ofFill();
+	ofTranslate(0., 0., Z_FIELD_END);
+	ofDrawRectRounded(goalRect, 20);
+	ofPopMatrix();
+
 	// draw field
 	ofPushMatrix();
-	ofTranslate(ofGetWidth() / 2., ofGetHeight(), -400);
+	ofTranslate(ofGetWidth() / 2., ofGetHeight(), Z_FIELD_START);
 	//ofTranslate(ofGetWidth() / 2., ofGetHeight() / 2., 30);
 	ofRotateX(90.);
+	ofNoFill();
+	ofSetColor(0, 255, 0);
 	field.drawWireframe();
 	ofPopMatrix();
 
-	// draw goal
-	for (float z = Z_NEAR; z > Z_FAR; z -= 50) {
-		cout << "drawing at " << z;
-		ofPushMatrix();
-		ofSetColor(255, 0, 255); //stroke color 
-		ofTranslate(ofGetWidth() / 2., ofGetHeight() / .2, z);
-		ofDrawRectRounded(goalRect, 20);
-		ofRectangle foo;
-		foo.set(0., 0., 100., 100.);
-		ofDrawRectRounded(foo, 10);
-		ofDrawRectRounded(paddleRect, 10);
-		ofPopMatrix();
-	}
 }
 
-void ofApp::draw_world(void) {
-	// draw the score and the game world
-
-
-	// draw field grid
-	ofPushMatrix();
-	ofTranslate(0, 0, Z_CLOSE);
-	ofDrawRectRounded(paddleRect, 50);
-	ofPopMatrix();
-
-	// draw goal
-	for (float z = Z_NEAR; z > Z_FAR; z -= 50) {
-		cout << "drawing at " << z;
-		ofPushMatrix();
-		ofSetColor(255, 0, 255); //stroke color 
-		ofTranslate(0., 0., z);
-		ofDrawRectRounded(goalRect, 20);
-		ofRectangle foo;
-		foo.set(0., 0., 100., 100.);
-		ofDrawRectRounded(foo, 10);
-		ofDrawRectRounded(paddleRect, 10);
-		ofPopMatrix();
-	}
-}
-
-
-void ofApp::update_celebrate(int win) {
-
-	celebrate += 10;
-
-	ofPushMatrix();
-	//ofTranslate(ofGetWidth() / 2., ofGetHeight() / 2., Z_FAR);
-
-
-	ofTranslate(ofGetWidth() / 2., ofGetHeight() / 2., celebrate);
-	if (win) {
-		ofRotateX(float(celebrate));
-		ofRectangle rect = font.getStringBoundingBox("GOAL!!!", 0, 0);
-		font.drawStringAsShapes("GOAL!!!", -rect.width/2, 0);
-
-	}
-	else {
-		font.drawStringAsShapes("MISS", 0, 0);
-	}
-	//field.drawWireframe();
-	ofPopMatrix();
-
-}
 
 
 void ofApp::draw() {
@@ -261,11 +204,17 @@ void ofApp::draw() {
 	//for (int i = 0; i < finder.size(); i++) {
 
 	// draw paddle
-	ofSetColor(0, 255, 255);//stroke color  
-							//ofRect(x, y, width, height);
-							// future change to crosshair method
-							//ofDrawRectRounded(faceRect, 50);
 	ofNoFill();
+	// Draw paddle
+	for (float z = Z_NEAR; z > Z_NEAR - 151; z -= 50) {
+		ofPushMatrix();
+		ofSetColor(0, 255, 255); //stroke color 
+		ofTranslate(0., 0., z);
+		ofDrawRectRounded(paddleRect, 30);
+		ofPopMatrix();
+	}
+
+
 	//ofPushMatrix();
 	//ofTranslate(0, 0, Z_CLOSE);
 	//ofDrawRectRounded(paddleRect, 50);
@@ -282,8 +231,38 @@ void ofApp::draw() {
 		break;
 	}
 
+	ofPushMatrix();
+	ofTranslate(ofGetWidth() / 2., ofGetHeight() / 2., -50);
+	ofRectangle rect = font.getStringBoundingBox("GOAL!!!", 0, 0);
+	font.drawStringAsShapes("GOAL!!!", -rect.width / 2., 0);
+	ofPopMatrix();
+
 
 }
+
+void ofApp::update_celebrate(int win) {
+
+	celebrate += 10;
+
+	ofPushMatrix();
+	//ofTranslate(ofGetWidth() / 2., ofGetHeight() / 2., Z_FAR);
+
+
+	ofTranslate(ofGetWidth() / 2., ofGetHeight() / 2., celebrate);
+	if (win) {
+		ofRotateX(float(celebrate / 2.));
+		ofRectangle rect = font.getStringBoundingBox("GOAL!!!", 0, 0);
+		font.drawStringAsShapes("GOAL!!!", -rect.width / 2., 0);
+
+	}
+	else {
+		ofRectangle rect = font.getStringBoundingBox("MISS", 0, 0);
+		font.drawStringAsShapes("MISS", -rect.width / 2., -Z_FAR - celebrate);
+	}
+	ofPopMatrix();
+
+}
+
 
 
 //--------------------------------------------------------------

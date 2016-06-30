@@ -10,6 +10,8 @@
 #define Z_CLOSE -500
 
 #define Z_FIELD -1000
+#define Z_FIELD_START -400
+#define Z_FIELD_END -1400
 
 // miss this many frames in a row to drop faces
 #define DROPPED_FACES_THRESH 30
