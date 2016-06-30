@@ -27,8 +27,7 @@ void ofApp::setup() {
 	state.set(S_IDLE, 0);
 
 	msg.loadFont("impact.ttf", 36, true, false, true, 0.1);
-
-
+	facerect = ofRectangle(0, 0, 0, 0);
 }
 
 void ofApp::update() {
@@ -47,21 +46,23 @@ void ofApp::update() {
 		if (finder.size() > 0) {
 			cv::Vec2f v = finder.getVelocity(0);
 			vel = toOf(v);
+			facerect = finder.getObjectSmoothed(0);
 		}
-
-
 	}
 
 	// state machine handling
-
 	switch (state.state) {
 	case S_IDLE:
 		if (finder.size()) {
 			// found face, so go to capture mode
+			// check for face size here
 			if (state.timeout()) {
 				avg_xvel = 0;
 				avg_yvel = 0;
 				state.set(S_HELLO, 5.);
+				// grab image when first detected
+				saveimg.setFromPixels(cam.getPixelsRef());
+				saverect = finder.getObjectSmoothed(0);
 			}
 		}
 		break;
@@ -74,22 +75,20 @@ void ofApp::update() {
 			}
 		}
 		else {
-			//if (vel.length() > 1.0) {
 			float mix = 0.7;
 			avg_xvel = mix*fabs(vel.x) + (1 - mix)*avg_xvel;
 			avg_yvel = mix*fabs(vel.y) + (1 - mix)*avg_yvel;
-			cout << std::fixed << std::showpoint;
-			cout << "Y vel:" << setprecision(3) << avg_xvel;
-			cout << "    X vel:" << setprecision(3) << avg_yvel;
-			//cout << "Yvel:" <<  vel.y / vel.length();
-			cout << "\n";
+			//cout << std::fixed << std::showpoint;
+			//cout << "Y vel:" << setprecision(3) << avg_xvel;
+			//cout << "    X vel:" << setprecision(3) << avg_yvel;
+			//cout << "\n";
 			if (avg_yvel > 10.0) {
 				state.set(S_YES_IMG, 3.);
+				store_image();
 			}
 			if (avg_xvel > 15.0) {
 				state.set(S_NO_IMG, 3.);
 			}
-			//}
 		}
 		break;
 
@@ -105,9 +104,6 @@ void ofApp::update() {
 		}
 		break;
 	}
-	// look for motion in crop region
-
-
 }
 
 
@@ -116,28 +112,25 @@ void ofApp::draw() {
 	grayimg.draw(0, 0);
 	ofSetHexColor(0xCCCCCC);
 
-	for (int i = 0; i < finder.size(); i++) {
-		ofRectangle object = finder.getObjectSmoothed(i);
-		//sunglasses.setAnchorPercent(.5, .5);
-		saveimg.setFromPixels(cam.getPixelsRef());
-		//float scaleAmount = .85 * object.width / sunglasses.getWidth();
-		//float scaleAmount = 1.1 * object.width / sunglasses.getWidth();
-		ofNoFill();
-		ofSetHexColor(0xFFFF00);
-		ofDrawRectRounded(object.x, object.y, object.width, object.height, 30.0);
 
-		//ofPushMatrix();
-		//ofTranslate(object.x + object.width / 2., object.y + object.height * 1.1);
-		//ofScale(scaleAmount, scaleAmount);
-		//sunglasses.draw(0, 0);
-		//ofPopMatrix();
+	//sunglasses.setAnchorPercent(.5, .5);
+	//float scaleAmount = .85 * object.width / sunglasses.getWidth();
+	//float scaleAmount = 1.1 * object.width / sunglasses.getWidth();
+	ofNoFill();
+	ofSetHexColor(0xFFFF00);
+	ofDrawRectRounded(facerect.x, facerect.y, facerect.width, facerect.height, 30.0);
 
-		//ofPushMatrix();
-		//ofTranslate(object.getPosition());
-		//ofDrawBitmapStringHighlight(ofToString(finder.getLabel(i)), 0, 0);
-		//ofDrawLine(ofVec2f(), toOf(finder.getVelocity(i)) * 10);
-		//ofPopMatrix();
-	}
+	//ofPushMatrix();
+	//ofTranslate(object.x + object.width / 2., object.y + object.height * 1.1);
+	//ofScale(scaleAmount, scaleAmount);
+	//sunglasses.draw(0, 0);
+	//ofPopMatrix();
+
+	//ofPushMatrix();
+	//ofTranslate(object.getPosition());
+	//ofDrawBitmapStringHighlight(ofToString(finder.getLabel(i)), 0, 0);
+	//ofDrawLine(ofVec2f(), toOf(finder.getVelocity(i)) * 10);
+	//ofPopMatrix();
 
 	switch (state.state) {
 	case S_IDLE:
@@ -156,8 +149,6 @@ void ofApp::draw() {
 		msg.drawString("OK, thanks anyway!", 50, ofGetHeight() - 100);
 		break;
 	}
-	// look for motion in crop region
-
 
 }
 
@@ -169,18 +160,13 @@ void ofApp::store_image() {
 	timeinfo = localtime(&rawtime);
 	char timestamp[80];
 	strftime(timestamp, 80, "%m-%d-%H-%M-%S", timeinfo);
-	//cout << timestamp << std::endl;
-	ofRectangle r;
-	if (finder.size() > 0)
-		r = finder.getObjectSmoothed(0);
-	else
-		r = ofRectangle(0, 0, 0, 0);
+	cout << timestamp << std::endl;
+	ofRectangle r = facerect;
 	char name[256];
 	sprintf(name, "%sx%03dy%03dw%d03h%03d.png", timestamp, int(r.x), int(r.y), int(r.width), int(r.height));
+	cout << "saving image: " << name;
 	saveimg.saveImage(name);
 	id++;
-
-
 
 }
 //--------------------------------------------------------------
@@ -188,20 +174,20 @@ void ofApp::keyPressed(int key) {
 	if (key == 's') {
 		store_image();
 	}
-		
+
 	if (key == 'p')
 	{
-			time_t rawtime;
-			time(&rawtime);
-			struct tm *timeinfo;
-			timeinfo = localtime(&rawtime);
-			//char buffer[80];
-			//strftime(buffer, 80, "Now it's %I:%M%p.", timeinfo);
-			char timestamp[80];
-			strftime(timestamp, 80, "%m-%d-%H-%M-%S", timeinfo);
-			//cout << "Current time is ::  " << ctime(&rawtime) << std::endl;
-			cout << timestamp << std::endl;
-		}
+		time_t rawtime;
+		time(&rawtime);
+		struct tm *timeinfo;
+		timeinfo = localtime(&rawtime);
+		//char buffer[80];
+		//strftime(buffer, 80, "Now it's %I:%M%p.", timeinfo);
+		char timestamp[80];
+		strftime(timestamp, 80, "%m-%d-%H-%M-%S", timeinfo);
+		//cout << "Current time is ::  " << ctime(&rawtime) << std::endl;
+		cout << timestamp << std::endl;
+	}
 
 }
 
@@ -213,7 +199,7 @@ void StateMach::set(int next_state, float timeout) {
 	if (timeout >= 0) {
 		ofResetElapsedTimeCounter();
 		reset_timer();
-	} 
+	}
 	print();
 }
 

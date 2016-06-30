@@ -127,8 +127,13 @@ void ofApp::update() {
 					ofPoint pc = paddleRect.getCenter();
 					ofVec2f spin = pc - bc;
 					b.bounce(spin / -20.0);
+				}
+				else {
+					cv::Vec2f v = finder.getVelocity(0);
+					ofVec2f spin = toOf(v);
 
 				}
+
 			}
 			else {
 				state.set_state(S_IDLE);
@@ -230,13 +235,6 @@ void ofApp::draw() {
 		update_celebrate(1);
 		break;
 	}
-
-	ofPushMatrix();
-	ofTranslate(ofGetWidth() / 2., ofGetHeight() / 2., -50);
-	ofRectangle rect = font.getStringBoundingBox("GOAL!!!", 0, 0);
-	font.drawStringAsShapes("GOAL!!!", -rect.width / 2., 0);
-	ofPopMatrix();
-
 
 }
 

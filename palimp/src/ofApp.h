@@ -36,6 +36,7 @@ public:
 	void draw();
 	void keyPressed(int key);
 	void store_image();
+	bool store_flag = false; // store only one image per face detected
 
 	ofVideoGrabber cam;
 	ofxCv::ObjectFinder finder;
@@ -44,6 +45,8 @@ public:
 	uint16_t id;
 	ofImage grabimg;
 	ofImage cropimg;
+	ofRectangle facerect;
+	ofRectangle saverect;
 
 	StateMach state;
 
