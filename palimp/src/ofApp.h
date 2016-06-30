@@ -9,10 +9,11 @@
 #define CAMH 480
 
 // state constants
-#define S_IDLE		1000
-#define S_CAPTURE	1001
-#define S_SAVE		1002
-#define S_INTERIM	1003
+#define S_IDLE		1000 // no face recognized
+#define S_HELLO	    1001 // face recognized
+#define S_CAPTURE	1002 // face recognized, show greeting
+#define S_YES_IMG	1003 // save image, show thanks
+#define S_NO_IMG	1004 // don't save image, show thanks
 
 class StateMach {
 	// state machine for game transitions
@@ -48,5 +49,6 @@ public:
 	ofxCvColorImage 	colorimg;
 	ofxCvGrayscaleImage 	grayimg;
 
+	ofTrueTypeFont msg;
 
 };

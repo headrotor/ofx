@@ -23,6 +23,9 @@ void ofApp::setup() {
 	// state machine handling
 	state.set(S_IDLE);
 
+	msg.loadFont("impact.ttf", 36, true, false, true, 0.1);
+
+
 }
 
 void ofApp::update() {
@@ -37,15 +40,12 @@ void ofApp::update() {
 		// do face detection in grayscale
 		finder.update(grayimg);
 		//cropimg = grayimg(cropr);
+		vel.set(0, 0);
 		if (finder.size() > 0) {
 			cv::Vec2f v = finder.getVelocity(0);
 			vel = toOf(v);
-			if (vel.length() > 1.0) {
-				cout << "Yvel:" << setprecision(4) << vel.y;
-				//cout << "Yvel:" <<  vel.y / vel.length();
-				cout << "\n";
-			}
 		}
+
 
 	}
 
@@ -55,21 +55,46 @@ void ofApp::update() {
 	case S_IDLE:
 		if (finder.size()) {
 			// found face, so go to capture mode
-			state.set(S_CAPTURE);
+			state.set(S_HELLO);
+			state.timeout_time = 5.;
+			state.reset_timer();
 		}
 		break;
 
-	case S_CAPTURE:
+	case S_HELLO:
 		if (finder.size() == 0) {
-			cout << "timer: " << state.time_elapsed();
+			cout << "timer: " << state.time_elapsed() << "\n";
 			if (state.timeout()) {
-				state.set(S_IDLE);
+				state.set(S_NO_IMG);
+				state.timeout_time = 2.;
+				state.reset_timer();
 			}
 		}
 		else {
-			state.reset_timer();
+			if (vel.length() > 1.0) {
+				cout << "Yvel:" << setprecision(4) << vel.y;
+				//cout << "Yvel:" <<  vel.y / vel.length();
+				cout << "\n";
+				if (vel.y > 20.0) {
+					state.set(S_YES_IMG);
+					state.timeout_time = 3.0;
+					state.reset_timer();
+				}
+			}
 		}
+		break;
 
+	case S_YES_IMG:
+		if (state.timeout()) {
+			state.set(S_IDLE);
+		}
+		break;
+
+	case S_NO_IMG:
+		if (state.timeout()) {
+			state.set(S_IDLE);
+		}
+		break;
 	}
 	// look for motion in crop region
 
@@ -103,7 +128,27 @@ void ofApp::draw() {
 		//ofDrawLine(ofVec2f(), toOf(finder.getVelocity(i)) * 10);
 		//ofPopMatrix();
 	}
+
+	switch (state.state) {
+	case S_IDLE:
+		break;
+
+	case S_HELLO:
+		msg.drawString("Hello!", 100, 100);
+		break;
+
+	case S_YES_IMG:
+		msg.drawString("Thank you!", 100, 100);
+		break;
+	case S_NO_IMG:
+		msg.drawString("OK, thanks!", 100, 100);
+		break;
+	}
+	// look for motion in crop region
+
+
 }
+
 
 
 //--------------------------------------------------------------
@@ -132,8 +177,15 @@ void StateMach::set(int next_state) {
 		ofResetElapsedTimeCounter();
 		reset_timer();
 		break;
-	case S_CAPTURE:
+	case S_HELLO:
 		timeout_time = 5.;
+		break;
+	case S_CAPTURE:
+		// display query
+		timeout_time = 2.;
+		break;
+	case S_NO_IMG:
+	case S_YES_IMG:
 		break;
 	}
 	print();
@@ -161,14 +213,17 @@ void StateMach::print(void) {
 	case S_IDLE:
 		cout << "State: IDLE\n";
 		break;
+	case S_HELLO:
+		cout << "State: HELLO\n";
+		break;
 	case S_CAPTURE:
 		cout << "State: CAPTURE\n";
 		break;
-	case S_SAVE:
-		cout << "State: SAVE\n";
+	case S_NO_IMG:
+		cout << "State: NO_IMG\n";
 		break;
-	case S_INTERIM:
-		cout << "State: CELEBRATE\n";
+	case S_YES_IMG:
+		cout << "State: YES_IMG\n";
 		break;
 	}
 }
