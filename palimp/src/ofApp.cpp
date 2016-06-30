@@ -44,9 +44,21 @@ void ofApp::update() {
 		//cropimg = grayimg(cropr);
 		vel.set(0, 0);
 		if (finder.size() > 0) {
-			cv::Vec2f v = finder.getVelocity(0);
+			id = 0;
+			float max_w = -1.;
+			// find biggest face
+			ofRectangle r;
+			for (int i = 0; i < finder.size(); i++) {
+				r = finder.getObjectSmoothed(i);
+				if (r.width > max_w) {
+					id = i;
+					facerect = r;
+					max_w = r.width;
+				}
+			}
+			cv::Vec2f v = finder.getVelocity(id);
 			vel = toOf(v);
-			facerect = finder.getObjectSmoothed(0);
+			facerect = finder.getObjectSmoothed(id);
 		}
 	}
 
@@ -56,7 +68,7 @@ void ofApp::update() {
 		if (finder.size()) {
 			// found face, so go to capture mode
 			// check for face size here
-			if (state.timeout()) {
+			if (state.timeout() && (facerect.width > ofGetWidth()/3.0)) {
 				avg_xvel = 0;
 				avg_yvel = 0;
 				state.set(S_HELLO, 5.);
@@ -69,9 +81,9 @@ void ofApp::update() {
 
 	case S_HELLO:
 		if (finder.size() == 0) {
-			cout << "timer: " << state.time_elapsed() << "\n";
+			//cout << "timer: " << state.time_elapsed() << "\n";
 			if (state.timeout()) {
-				state.set(S_IDLE, 10.);
+				state.set(S_NO_IMG, 2.);
 			}
 		}
 		else {
@@ -138,7 +150,8 @@ void ofApp::draw() {
 
 	case S_HELLO:
 		msg.drawString("Hello!", 50, 100);
-		msg.drawString("May we take your picture?", 50, ofGetHeight() - 100);
+		msg.drawString("May we take your picture?", 50, ofGetHeight() - 150);
+		msg.drawString("(nod yes or no)", 50, ofGetHeight() - 75);
 		break;
 
 	case S_YES_IMG:
