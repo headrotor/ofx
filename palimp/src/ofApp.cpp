@@ -1,5 +1,8 @@
 #include "ofApp.h"
 
+// for time stamps 
+#include <ctime>
+
 using namespace ofxCv;
 using namespace cv;
 
@@ -21,7 +24,7 @@ void ofApp::setup() {
 	grayimg.allocate(CAMW, CAMH);
 
 	// state machine handling
-	state.set(S_IDLE);
+	state.set(S_IDLE, 0);
 
 	msg.loadFont("impact.ttf", 36, true, false, true, 0.1);
 
@@ -55,9 +58,11 @@ void ofApp::update() {
 	case S_IDLE:
 		if (finder.size()) {
 			// found face, so go to capture mode
-			state.set(S_HELLO);
-			state.timeout_time = 5.;
-			state.reset_timer();
+			if (state.timeout()) {
+				avg_xvel = 0;
+				avg_yvel = 0;
+				state.set(S_HELLO, 5.);
+			}
 		}
 		break;
 
@@ -65,34 +70,38 @@ void ofApp::update() {
 		if (finder.size() == 0) {
 			cout << "timer: " << state.time_elapsed() << "\n";
 			if (state.timeout()) {
-				state.set(S_NO_IMG);
-				state.timeout_time = 2.;
-				state.reset_timer();
+				state.set(S_IDLE, 10.);
 			}
 		}
 		else {
-			if (vel.length() > 1.0) {
-				cout << "Yvel:" << setprecision(4) << vel.y;
-				//cout << "Yvel:" <<  vel.y / vel.length();
-				cout << "\n";
-				if (vel.y > 20.0) {
-					state.set(S_YES_IMG);
-					state.timeout_time = 3.0;
-					state.reset_timer();
-				}
+			//if (vel.length() > 1.0) {
+			float mix = 0.7;
+			avg_xvel = mix*fabs(vel.x) + (1 - mix)*avg_xvel;
+			avg_yvel = mix*fabs(vel.y) + (1 - mix)*avg_yvel;
+			cout << std::fixed << std::showpoint;
+			cout << "Y vel:" << setprecision(3) << avg_xvel;
+			cout << "    X vel:" << setprecision(3) << avg_yvel;
+			//cout << "Yvel:" <<  vel.y / vel.length();
+			cout << "\n";
+			if (avg_yvel > 10.0) {
+				state.set(S_YES_IMG, 3.);
 			}
+			if (avg_xvel > 15.0) {
+				state.set(S_NO_IMG, 3.);
+			}
+			//}
 		}
 		break;
 
 	case S_YES_IMG:
 		if (state.timeout()) {
-			state.set(S_IDLE);
+			state.set(S_IDLE, 2);
 		}
 		break;
 
 	case S_NO_IMG:
 		if (state.timeout()) {
-			state.set(S_IDLE);
+			state.set(S_IDLE, 2);
 		}
 		break;
 	}
@@ -100,6 +109,7 @@ void ofApp::update() {
 
 
 }
+
 
 void ofApp::draw() {
 	ofSetHexColor(0xFFFFFF);
@@ -134,14 +144,16 @@ void ofApp::draw() {
 		break;
 
 	case S_HELLO:
-		msg.drawString("Hello!", 100, 100);
+		msg.drawString("Hello!", 50, 100);
+		msg.drawString("May we take your picture?", 50, ofGetHeight() - 100);
 		break;
 
 	case S_YES_IMG:
-		msg.drawString("Thank you!", 100, 100);
+		msg.drawString("Thank you!", 100, 300);
 		break;
+
 	case S_NO_IMG:
-		msg.drawString("OK, thanks!", 100, 100);
+		msg.drawString("OK, thanks anyway!", 50, ofGetHeight() - 100);
 		break;
 	}
 	// look for motion in crop region
@@ -149,45 +161,59 @@ void ofApp::draw() {
 
 }
 
+void ofApp::store_image() {
+
+	time_t rawtime;
+	time(&rawtime);
+	struct tm *timeinfo;
+	timeinfo = localtime(&rawtime);
+	char timestamp[80];
+	strftime(timestamp, 80, "%m-%d-%H-%M-%S", timeinfo);
+	//cout << timestamp << std::endl;
+	ofRectangle r;
+	if (finder.size() > 0)
+		r = finder.getObjectSmoothed(0);
+	else
+		r = ofRectangle(0, 0, 0, 0);
+	char name[256];
+	sprintf(name, "%sx%03dy%03dw%d03h%03d.png", timestamp, int(r.x), int(r.y), int(r.width), int(r.height));
+	saveimg.saveImage(name);
+	id++;
 
 
+
+}
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key) {
+	if (key == 's') {
+		store_image();
+	}
+		
 	if (key == 'p')
 	{
-		char name[256];
-		sprintf(name, "img%03d.png", id);
-		saveimg.saveImage(name);
-		id++;
-		cout << "P pressed\n";
-	}
+			time_t rawtime;
+			time(&rawtime);
+			struct tm *timeinfo;
+			timeinfo = localtime(&rawtime);
+			//char buffer[80];
+			//strftime(buffer, 80, "Now it's %I:%M%p.", timeinfo);
+			char timestamp[80];
+			strftime(timestamp, 80, "%m-%d-%H-%M-%S", timeinfo);
+			//cout << "Current time is ::  " << ctime(&rawtime) << std::endl;
+			cout << timestamp << std::endl;
+		}
 
 }
 
 
-void StateMach::set(int next_state) {
-	reset_timer();
+void StateMach::set(int next_state, float timeout) {
 	state = next_state;
+	timeout_time = timeout;
 	// default no timeout
-	timeout_time = -1.;
-
-	// do state-dependent things
-	switch (state) {
-	case S_IDLE:
+	if (timeout >= 0) {
 		ofResetElapsedTimeCounter();
 		reset_timer();
-		break;
-	case S_HELLO:
-		timeout_time = 5.;
-		break;
-	case S_CAPTURE:
-		// display query
-		timeout_time = 2.;
-		break;
-	case S_NO_IMG:
-	case S_YES_IMG:
-		break;
-	}
+	} 
 	print();
 }
 
@@ -202,7 +228,7 @@ float StateMach::time_elapsed(void) {
 bool StateMach::timeout(void) {
 	if (timeout_time < 0)
 		return(false);
-	if (time_elapsed() >  timeout_time)
+	if (time_elapsed() > timeout_time)
 		return(true);
 	return(false);
 }

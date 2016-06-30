@@ -21,7 +21,7 @@ public:
 	int state;
 	float start_time;
 	float timeout_time; // timeout if in this state >
-	void set(int next_state);
+	void set(int next_state, float timeout);
 	void print(void);
 	bool timeout(void);
 	void reset_timer();
@@ -35,6 +35,7 @@ public:
 	void update();
 	void draw();
 	void keyPressed(int key);
+	void store_image();
 
 	ofVideoGrabber cam;
 	ofxCv::ObjectFinder finder;
@@ -50,5 +51,11 @@ public:
 	ofxCvGrayscaleImage 	grayimg;
 
 	ofTrueTypeFont msg;
+
+	// running average of x and y face velocities
+	// to detect nod yes or no
+
+	float avg_yvel;
+	float avg_xvel;
 
 };
