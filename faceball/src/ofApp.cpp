@@ -1,25 +1,27 @@
 #include "ofApp.h"
 
+
 using namespace ofxCv;
 using namespace cv;
 
 
 void ofApp::setup() {
-	ofSetVerticalSync(true);
-	ofSetFrameRate(120);
+	//ofSetVerticalSync(true);
+	//ofSetFrameRate(120);
 	finder.setup("haarcascade_frontalface_default.xml");
 	finder.setPreset(ObjectFinder::Fast);
 	finder.getTracker().setSmoothingRate(.3);
-	cam.listDevices();
+	//cam.listDevices();
 	cam.setDeviceID(0);
 	cam.setup(CAM_WIDTH, CAM_HEIGHT);
 	//cam.setup(640,480);
 	//sunglasses.load("sunglasses.png");
-	ofEnableAlphaBlending();
+	//ofEnableAlphaBlending();
 	drawcam = false;
 	b.init();
 	ofBackground(ofColor(20, 20, 20));
 
+	
 	reset_game();
 	faceCenter.set(CAM_WIDTH / 2.0, CAM_HEIGHT / 2.0);
 	ofRectMode(OF_RECTMODE_CENTER);
@@ -58,6 +60,10 @@ void ofApp::reset_game(void) {
 	b.reset();
 	cout << "RESET\n";
 
+}
+
+void ofApp::old_update() {
+	b.update(state.state);
 }
 
 void ofApp::update() {
@@ -164,6 +170,11 @@ void ofApp::update() {
 void ofApp::draw_world(void) {
 	// draw the score and the game world
 	//draw score
+	
+	for (int i = 0; i<arguments.size(); ++i) {
+		ofDrawBitmapString(arguments.at(i), 20.0f, 20.0f*i);
+	}
+
 	ofPushMatrix();
 	ofTranslate(0, 0, 0);
 	ofSetColor(0, 255, 0);//stroke color 
@@ -193,6 +204,9 @@ void ofApp::draw_world(void) {
 }
 
 
+void ofApp::old_draw() {
+	draw_world();
+}
 
 void ofApp::draw() {
 	ofDrawBitmapString("fps: " + ofToString(ofGetFrameRate()), 10, 10);

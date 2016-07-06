@@ -64,8 +64,10 @@ public:
 
 	// update game coordinates and state
 	void update();
+	void old_update();
 	// actually draw the game world
 	void draw();
+	void old_draw();
 	// draw the game paddle
 	void draw_paddle();
 	// draw the game world
@@ -110,6 +112,7 @@ public:
 
 	float paddleSize;
 
+	vector<string> arguments;
 
 	// font for scores, etc
 	ofTrueTypeFont font;
