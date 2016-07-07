@@ -48,6 +48,7 @@ void ofApp::setup() {
 	//field.setMode(OF_PRIMITIVE_TRIANGLE_FAN);
 	goalRect.set(ofGetWidth() / 2 - 200., ofGetHeight() - 100, 400, 200);
 
+
 }
 
 
