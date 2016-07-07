@@ -3,6 +3,7 @@
 #include "ofMain.h"
 #include "ofxCv.h"
 
+#define RPI
 
 // Z positions for ball and goal
 #define Z_FAR -3000
@@ -40,6 +41,11 @@ public:
 //cam dimensions
 #define CAM_WIDTH 640
 #define CAM_HEIGHT 480
+
+
+//screen dimensions
+#define SCREEN_WIDTH 1024
+#define SCREEN_HEIGHT 768
 
 
 // state constants
