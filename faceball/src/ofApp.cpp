@@ -10,7 +10,12 @@ void ofApp::setup() {
 	//ofSetFrameRate(120);
 	finder.setup("haarcascade_frontalface_default.xml");
 	finder.setPreset(ObjectFinder::Fast);
-	finder.getTracker().setSmoothingRate(.3);
+	finder.setFindBiggestObject(true);
+	//finder.getTracker().setSmoothingRate(.3);
+	// samller = smoother
+	finder.getTracker().setSmoothingRate(0.2);
+	// ignore low-contrast regions
+	finder.setCannyPruning(true);
 	//cam.listDevices();
 	cam.setDeviceID(0);
 	cam.setup(CAM_WIDTH, CAM_HEIGHT);
@@ -63,10 +68,6 @@ void ofApp::reset_game(void) {
 
 }
 
-void ofApp::old_update() {
-	b.update(state.state);
-}
-
 void ofApp::update() {
 
 	cam.update();
@@ -79,14 +80,14 @@ void ofApp::update() {
 		int i = 0;
 		faceRect = finder.getObjectSmoothed(i);
 		// flip X coordinate
-		faceRect.x = ofGetWidth() - faceRect.x - faceRect.width;
+		faceRect.x = CAM_WIDTH - faceRect.x - faceRect.width;
 
 		ofPoint fc = faceRect.getCenter();
 		// scale center so we can reach the entire screen
-		float border = CAM_WIDTH;
-		fc.x = ofMap(fc.x, 0., CAM_WIDTH, -border, CAM_WIDTH + border);
-		border = CAM_HEIGHT;
-		fc.y = ofMap(fc.y, 0., CAM_HEIGHT, -border, CAM_HEIGHT + border);
+		float border = SCREEN_WIDTH*(SCALE_FACE_POS - 1.);
+		fc.x = ofMap(fc.x, 0., CAM_WIDTH, -border, SCREEN_WIDTH + border);
+		border = SCREEN_HEIGHT*(SCALE_FACE_POS - 1.);
+		fc.y = ofMap(fc.y, 0., CAM_HEIGHT,  -border, SCREEN_HEIGHT + border );
 		fc.x -= paddleSize / 2;
 		fc.y -= paddleSize / 2;
 		paddleRect.set(fc.x, fc.y, paddleSize, paddleSize);
@@ -202,11 +203,6 @@ void ofApp::draw_world(void) {
 	field.drawWireframe();
 	ofPopMatrix();
 
-}
-
-
-void ofApp::old_draw() {
-	draw_world();
 }
 
 void ofApp::draw() {

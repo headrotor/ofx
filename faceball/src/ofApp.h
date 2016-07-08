@@ -5,6 +5,18 @@
 
 #define RPI
 
+//cam dimensions
+#define CAM_WIDTH 640
+#define CAM_HEIGHT 480
+
+//make 1 pixel face movement SCALE_FACE_POS pixels
+#define SCALE_FACE_POS 2.0
+
+
+//screen dimensions
+#define SCREEN_WIDTH 1024
+#define SCREEN_HEIGHT 768
+
 // Z positions for ball and goal
 #define Z_FAR -3000
 #define Z_NEAR -400
@@ -38,14 +50,6 @@ public:
 	ofPoint getCenter();  // get x, y center
 };
 
-//cam dimensions
-#define CAM_WIDTH 640
-#define CAM_HEIGHT 480
-
-
-//screen dimensions
-#define SCREEN_WIDTH 1024
-#define SCREEN_HEIGHT 768
 
 
 // state constants
@@ -70,10 +74,8 @@ public:
 
 	// update game coordinates and state
 	void update();
-	void old_update();
 	// actually draw the game world
 	void draw();
-	void old_draw();
 	// draw the game paddle
 	void draw_paddle();
 	// draw the game world
