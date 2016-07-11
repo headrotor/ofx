@@ -1,6 +1,14 @@
 #include "ofApp.h"
 
-int main() {
-	ofSetupOpenGL(640, 480, OF_WINDOW);
-	ofRunApp(new ofApp());
+int main(int argc, char *argv[]) {
+
+#ifdef RPI
+	ofSetupOpenGL(SCREEN_WIDTH, SCREEN_HEIGHT, OF_WINDOW);
+#else
+	ofSetupOpenGL(SCREEN_WIDTH, SCREEN_HEIGHT, OF_GAME_MODE);
+#endif
+	ofApp *app = new ofApp();
+
+	app->arguments = vector<string>(argv, argv + argc);
+	ofRunApp(app);
 }

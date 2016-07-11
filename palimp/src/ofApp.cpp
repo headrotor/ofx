@@ -11,16 +11,17 @@ void ofApp::setup() {
 	ofSetFrameRate(120);
 	finder.setup("haarcascade_frontalface_default.xml");
 	finder.setPreset(ObjectFinder::Fast);
+	finder.setFindBiggestObject(true);
 	finder.getTracker().setSmoothingRate(.3);
-	cam.listDevices();
+	//cam.listDevices();
 	cam.setDeviceID(0);
-	cam.setup(CAMW, CAMH);
+	cam.setup(CAM_WIDTH, CAM_HEIGHT);
 	ofEnableAlphaBlending();
 	id = 0;
 
-	grabimg.allocate(CAMW, CAMH, OF_IMAGE_COLOR);
-	colorimg.allocate(CAMW, CAMH);
-	grayimg.allocate(CAMW, CAMH);
+	grabimg.allocate(CAM_WIDTH, CAM_HEIGHT, OF_IMAGE_COLOR);
+	colorimg.allocate(CAM_WIDTH, CAM_HEIGHT);
+	grayimg.allocate(CAM_WIDTH, CAM_HEIGHT);
 
 	// state machine handling
 	state.set(S_IDLE, 0);
@@ -28,6 +29,7 @@ void ofApp::setup() {
 	// allocate array of images 
 	for (int i = 0; i < NUM_IMAGES; i++) {
 		gray_images.push_back(ofImage());
+		gray_rects.push_back(ofRectangle());
 	}
 
 	msg.loadFont("impact.ttf", 36, true, false, true, 0.1);
@@ -66,6 +68,7 @@ void ofApp::update() {
 			cv::Vec2f v = finder.getVelocity(id);
 			vel = toOf(v);
 			facerect = finder.getObjectSmoothed(id);
+
 		}
 	}
 
@@ -82,6 +85,7 @@ void ofApp::update() {
 				// disabled to test idle
 				//state.set(S_HELLO, 5.);
 				// grab image when first detected
+				//cout << "got saveimg\n";
 				saveimg.setFromPixels(cam.getPixelsRef());
 				saverect = finder.getObjectSmoothed(0);
 			}
@@ -128,29 +132,14 @@ void ofApp::update() {
 }
 
 void ofApp::draw() {
-	ofSetHexColor(0xFFFFFF);
-	grayimg.draw(0, 0);
+
+	ofSetHexColor(0xFFFFFFFF);
+	grayimg.draw(0, 0, ofGetWidth(), ofGetHeight());
+
 	ofSetHexColor(0xCCCCCC);
-
-
-	//sunglasses.setAnchorPercent(.5, .5);
-	//float scaleAmount = .85 * object.width / sunglasses.getWidth();
-	//float scaleAmount = 1.1 * object.width / sunglasses.getWidth();
 	ofNoFill();
-	ofSetHexColor(0xFFFF00);
-	ofDrawRectRounded(facerect.x, facerect.y, facerect.width, facerect.height, 30.0);
-
-	//ofPushMatrix();
-	//ofTranslate(object.x + object.width / 2., object.y + object.height * 1.1);
-	//ofScale(scaleAmount, scaleAmount);
-	//sunglasses.draw(0, 0);
-	//ofPopMatrix();
-
-	//ofPushMatrix();
-	//ofTranslate(object.getPosition());
-	//ofDrawBitmapStringHighlight(ofToString(finder.getLabel(i)), 0, 0);
-	//ofDrawLine(ofVec2f(), toOf(finder.getVelocity(i)) * 10);
-	//ofPopMatrix();
+	ofSetHexColor(0xFFFF00FF);
+	ofDrawRectRounded(facerect.x * xscale, facerect.y*yscale, facerect.width*xscale, facerect.height*yscale, 30.0);
 
 	switch (state.state) {
 	case S_IDLE:
@@ -171,7 +160,6 @@ void ofApp::draw() {
 		msg.drawString("OK, thanks anyway!", 50, ofGetHeight() - 100);
 		break;
 	}
-
 }
 
 void ofApp::init_idle() {
@@ -195,9 +183,21 @@ void ofApp::init_idle() {
 			ofLogNotice(imgs.getPath(i));
 			cout << "loading gray file " << i;
 			gray_images[i].load(imgs.getFile(i));
+			gray_images[i].setImageType(OF_IMAGE_GRAYSCALE);
+
+			// parse rectangle out of file name
+			ofRectangle r = gray_rects[i];
+			unsigned int x, y, w, h;
+			char timestamp[20];
+			sscanf(imgs.getPath(i).c_str(), "%14sx%3uy%dw%dh%d.png", timestamp, &x, &y, &w, &h);
+			gray_rects[i].set(x, y, w, h);
+			//cout << "timestamp: " << timestamp << "\n";
+			//cout << "x: " << x << " y:" << y << "\n";
 		}
 	}
 }
+
+
 
 void ofApp::store_image() {
 
@@ -220,12 +220,40 @@ void ofApp::store_image() {
 //--------------------------------------------------------------
 void ofApp::draw_idle() {
 	// list of images in ofDirectory imgs, load and display
-	ofSetColor(255, 255, 255, int(127 * (sin(ofGetElapsedTimef() + 1.))));
+	//ofSetColor(255, 255, 255, int(127 * (sin(ofGetElapsedTimef() + 1.))));
 	//idle_image.draw(0, 0);
+	/*
 	for (int i = 0; i < NUM_IMAGES; i++) {
-		ofSetColor(255, 255, 255, 127);
-		gray_images[i].draw(30 * i, 30 * i);
+		//ofSetColor(255, 255, 255, int(127 * (sin(float(i)*0.2*ofGetElapsedTimef()) + 1.)));
+		ofSetColor(255, 255, 255, 100);
+		gray_images[i].draw(0,0);
+		ofSetColor(0,255,0,255);
+		ofRect(gray_rects[i]);
+
 	}
+	*/
+
+	// brady bunch
+	int x = 0;
+	int y = 0;
+	int maxy = -1;
+	for (int i = 0; i < NUM_IMAGES; i++) {
+		//ofSetColor(255, 255, 255, int(127 * (sin(float(i)*0.2*ofGetElapsedTimef()) + 1.)));
+		ofSetColor(255, 255, 255, 255);
+		ofRectangle r = gray_rects[i];
+		gray_images[i].drawSubsection(x, y, r.width, r.height, r.x, r.y);
+		x += r.width;
+		if (r.height > maxy) {
+			maxy = r.height;
+		}
+		x += r.width;
+		if (x > ofGetWidth() - 150) {
+			y += maxy;
+			x = 0;
+			maxy = -1;
+		}
+	}
+
 }
 
 

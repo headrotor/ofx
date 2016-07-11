@@ -5,8 +5,13 @@
 #include "ofxOpenCv.h"
 
 
-#define CAMW 640
-#define CAMH 480
+#define CAM_WIDTH 640
+#define CAM_HEIGHT 480
+
+#define SCREEN_WIDTH 1024
+#define SCREEN_HEIGHT 768
+
+
 
 // state constants
 #define S_IDLE		1000 // no face recognized
@@ -29,7 +34,7 @@ public:
 
 };
 
-#define NUM_IMAGES 3
+#define NUM_IMAGES 5
 
 class ofApp : public ofBaseApp {
 public:
@@ -38,13 +43,15 @@ public:
 	void draw();
 	void keyPressed(int key);
 	void store_image();
-
+	vector<string> arguments;
 	void init_idle();
 	//void update_idle();
 	void draw_idle();
 	ofImage idle_image;
 	//ofDirectory imgs;
 	vector <ofImage> gray_images;
+	vector <ofRectangle> gray_rects;
+	ofRectangle parse_path(string path);
 
 	bool store_flag = false; // store only one image per face detected
 
@@ -70,5 +77,9 @@ public:
 
 	float avg_yvel;
 	float avg_xvel;
+
+	// scaling to convert between screen and cam rect sizes
+	float xscale = float(SCREEN_WIDTH) / float(CAM_WIDTH);
+	float yscale = float(SCREEN_HEIGHT) / float(CAM_HEIGHT);
 
 };
