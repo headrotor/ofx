@@ -29,6 +29,8 @@ public:
 
 };
 
+#define NUM_IMAGES 3
+
 class ofApp : public ofBaseApp {
 public:
 	void setup();
@@ -42,6 +44,7 @@ public:
 	void draw_idle();
 	ofImage idle_image;
 	//ofDirectory imgs;
+	vector <ofImage> gray_images;
 
 	bool store_flag = false; // store only one image per face detected
 

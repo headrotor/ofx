@@ -25,8 +25,16 @@ void ofApp::setup() {
 	// state machine handling
 	state.set(S_IDLE, 0);
 
+	// allocate array of images 
+	for (int i = 0; i < NUM_IMAGES; i++) {
+		gray_images.push_back(ofImage());
+	}
+
 	msg.loadFont("impact.ttf", 36, true, false, true, 0.1);
 	facerect = ofRectangle(0, 0, 0, 0);
+
+	// load stored images 
+	init_idle();
 }
 
 void ofApp::update() {
@@ -119,7 +127,6 @@ void ofApp::update() {
 	}
 }
 
-
 void ofApp::draw() {
 	ofSetHexColor(0xFFFFFF);
 	grayimg.draw(0, 0);
@@ -178,12 +185,17 @@ void ofApp::init_idle() {
 	imgs.listDir();
 
 	if (imgs.size() > 0) {
-		cout << "loading file " << imgs.getPath(imgs.size()-1) << "\n";
+		cout << "loading color file " << imgs.getPath(imgs.size() - 1) << "\n";
 		idle_image.load(imgs.getFile(imgs.size()-1));
 	}	
+
 	//go through and print out all the paths
 	for (int i = 0; i < imgs.size(); i++) {
-		ofLogNotice(imgs.getPath(i));
+		if (i < NUM_IMAGES) {
+			ofLogNotice(imgs.getPath(i));
+			cout << "loading gray file " << i;
+			gray_images[i].load(imgs.getFile(i));
+		}
 	}
 }
 
@@ -204,12 +216,16 @@ void ofApp::store_image() {
 	id++;
 
 }
+
 //--------------------------------------------------------------
 void ofApp::draw_idle() {
 	// list of images in ofDirectory imgs, load and display
 	ofSetColor(255, 255, 255, int(127 * (sin(ofGetElapsedTimef() + 1.))));
-	idle_image.draw(0, 0);
-
+	//idle_image.draw(0, 0);
+	for (int i = 0; i < NUM_IMAGES; i++) {
+		ofSetColor(255, 255, 255, 127);
+		gray_images[i].draw(30 * i, 30 * i);
+	}
 }
 
 
@@ -217,8 +233,10 @@ void ofApp::keyPressed(int key) {
 	if (key == 's') {
 		// test back-to-idle handling
 		saveimg.setFromPixels(cam.getPixelsRef());
-		saverect = finder.getObjectSmoothed(0);
-		store_image();
+		if (finder.size()) {
+			saverect = finder.getObjectSmoothed(0);
+			store_image();
+		}
 		init_idle();
 	}
 
@@ -235,10 +253,9 @@ void ofApp::keyPressed(int key) {
 		//cout << "Current time is ::  " << ctime(&rawtime) << std::endl;
 		cout << timestamp << std::endl;
 	}
-
 }
 
-
+// State machine handling ------------------------------------------------------------
 void StateMach::set(int next_state, float timeout) {
 	state = next_state;
 	timeout_time = timeout;
