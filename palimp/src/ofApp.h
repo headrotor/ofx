@@ -36,6 +36,13 @@ public:
 	void draw();
 	void keyPressed(int key);
 	void store_image();
+
+	void init_idle();
+	//void update_idle();
+	void draw_idle();
+	ofImage idle_image;
+	//ofDirectory imgs;
+
 	bool store_flag = false; // store only one image per face detected
 
 	ofVideoGrabber cam;

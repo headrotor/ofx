@@ -15,7 +15,6 @@ void ofApp::setup() {
 	cam.listDevices();
 	cam.setDeviceID(0);
 	cam.setup(CAMW, CAMH);
-	//sunglasses.load("sunglasses.png");
 	ofEnableAlphaBlending();
 	id = 0;
 
@@ -65,13 +64,15 @@ void ofApp::update() {
 	// state machine handling
 	switch (state.state) {
 	case S_IDLE:
+		//update_idle();
 		if (finder.size()) {
 			// found face, so go to capture mode
 			// check for face size here
 			if (state.timeout() && (facerect.width > ofGetWidth()/3.0)) {
 				avg_xvel = 0;
 				avg_yvel = 0;
-				state.set(S_HELLO, 5.);
+				// disabled to test idle
+				//state.set(S_HELLO, 5.);
 				// grab image when first detected
 				saveimg.setFromPixels(cam.getPixelsRef());
 				saverect = finder.getObjectSmoothed(0);
@@ -146,6 +147,7 @@ void ofApp::draw() {
 
 	switch (state.state) {
 	case S_IDLE:
+		draw_idle();
 		break;
 
 	case S_HELLO:
@@ -165,6 +167,26 @@ void ofApp::draw() {
 
 }
 
+void ofApp::init_idle() {
+	//some path, may be absolute or relative to bin/data
+	cout << "init idle\n";
+	string path = "";
+	ofDirectory imgs(path);
+	//only show png files
+	imgs.allowExt("png");
+	//populate the directory object
+	imgs.listDir();
+
+	if (imgs.size() > 0) {
+		cout << "loading file " << imgs.getPath(imgs.size()-1) << "\n";
+		idle_image.load(imgs.getFile(imgs.size()-1));
+	}	
+	//go through and print out all the paths
+	for (int i = 0; i < imgs.size(); i++) {
+		ofLogNotice(imgs.getPath(i));
+	}
+}
+
 void ofApp::store_image() {
 
 	time_t rawtime;
@@ -176,16 +198,28 @@ void ofApp::store_image() {
 	cout << timestamp << std::endl;
 	ofRectangle r = facerect;
 	char name[256];
-	sprintf(name, "%sx%03dy%03dw%d03h%03d.png", timestamp, int(r.x), int(r.y), int(r.width), int(r.height));
+	sprintf(name, "%sx%03dy%03dw%03dh%03d.png", timestamp, int(r.x), int(r.y), int(r.width), int(r.height));
 	cout << "saving image: " << name;
 	saveimg.saveImage(name);
 	id++;
 
 }
 //--------------------------------------------------------------
+void ofApp::draw_idle() {
+	// list of images in ofDirectory imgs, load and display
+	ofSetColor(255, 255, 255, int(127 * (sin(ofGetElapsedTimef() + 1.))));
+	idle_image.draw(0, 0);
+
+}
+
+
 void ofApp::keyPressed(int key) {
 	if (key == 's') {
+		// test back-to-idle handling
+		saveimg.setFromPixels(cam.getPixelsRef());
+		saverect = finder.getObjectSmoothed(0);
 		store_image();
+		init_idle();
 	}
 
 	if (key == 'p')
