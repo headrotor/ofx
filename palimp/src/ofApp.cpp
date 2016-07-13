@@ -11,7 +11,7 @@ void ofApp::setup() {
 	ofSetFrameRate(120);
 	finder.setup("haarcascade_frontalface_default.xml");
 	finder.setPreset(ObjectFinder::Fast);
-	finder.setFindBiggestObject(true);
+	//finder.setFindBiggestObject(true);
 	finder.getTracker().setSmoothingRate(.3);
 	//cam.listDevices();
 	cam.setDeviceID(0);
@@ -79,11 +79,11 @@ void ofApp::update() {
 		if (finder.size()) {
 			// found face, so go to capture mode
 			// check for face size here
-			if (state.timeout() && (facerect.width > ofGetWidth()/3.0)) {
+			if (state.timeout() && (facerect.width*xscale > ofGetWidth()/3.0)) {
 				avg_xvel = 0;
 				avg_yvel = 0;
-				// disabled to test idle
-				//state.set(S_HELLO, 5.);
+				//disabled to test idle
+				state.set(S_HELLO, 5.);
 				// grab image when first detected
 				//cout << "got saveimg\n";
 				saveimg.setFromPixels(cam.getPixelsRef());
@@ -177,12 +177,12 @@ void ofApp::init_idle() {
 		idle_image.load(imgs.getFile(imgs.size()-1));
 	}	
 
-	//go through and print out all the paths
-	for (int i = 0; i < imgs.size(); i++) {
-		if (i < NUM_IMAGES) {
-			ofLogNotice(imgs.getPath(i));
-			cout << "loading gray file " << i;
-			gray_images[i].load(imgs.getFile(i));
+	if (imgs.size() > NUM_IMAGES + 1) {
+		for (int i = 0; i < NUM_IMAGES;  i++) {
+			// load most recent images
+			int j = imgs.size() - i - 1;
+			cout << "loading gray file " << imgs.getPath(j);
+			gray_images[i].load(imgs.getFile(j));
 			gray_images[i].setImageType(OF_IMAGE_GRAYSCALE);
 
 			// parse rectangle out of file name
@@ -220,29 +220,32 @@ void ofApp::store_image() {
 //--------------------------------------------------------------
 void ofApp::draw_idle() {
 	// list of images in ofDirectory imgs, load and display
-	//ofSetColor(255, 255, 255, int(127 * (sin(ofGetElapsedTimef() + 1.))));
-	//idle_image.draw(0, 0);
-	/*
+	ofSetColor(255, 255, 255, 255);
+	idle_image.draw(0, 0, ofGetWidth(), ofGetHeight());
 	for (int i = 0; i < NUM_IMAGES; i++) {
-		//ofSetColor(255, 255, 255, int(127 * (sin(float(i)*0.2*ofGetElapsedTimef()) + 1.)));
-		ofSetColor(255, 255, 255, 100);
-		gray_images[i].draw(0,0);
-		ofSetColor(0,255,0,255);
-		ofRect(gray_rects[i]);
+		//ofSetColor(255, 255, 255, int((100 / (i + 1)) * (sin(float(i)*0.2*ofGetElapsedTimef()) + 1.)));
+		ofSetColor(255, 255, 255, int(100 * (sin(float(i)*0.2*ofGetElapsedTimef()) + 1./(i+1))));
+		//ofSetColor(255, 255, 255, 100);
+		gray_images[i].draw(0,0,ofGetWidth(),ofGetHeight());
+		//ofSetColor(0,255,0,255);
+		//ofRect(gray_rects[i]);
 
 	}
-	*/
+
+	return;
 
 	// brady bunch
 	int x = 0;
 	int y = 0;
 	int maxy = -1;
+	int ss = 150;
 	for (int i = 0; i < NUM_IMAGES; i++) {
 		//ofSetColor(255, 255, 255, int(127 * (sin(float(i)*0.2*ofGetElapsedTimef()) + 1.)));
 		ofSetColor(255, 255, 255, 255);
 		ofRectangle r = gray_rects[i];
+		//gray_images[i].drawSubsection(x, y, ss, ss, r.width, r.height, r.x, r.y);
 		gray_images[i].drawSubsection(x, y, r.width, r.height, r.x, r.y);
-		x += r.width;
+		//x += ss;
 		if (r.height > maxy) {
 			maxy = r.height;
 		}
@@ -258,6 +261,9 @@ void ofApp::draw_idle() {
 
 
 void ofApp::keyPressed(int key) {
+	if (key == 'x') {
+		ofExit();
+	}
 	if (key == 's') {
 		// test back-to-idle handling
 		saveimg.setFromPixels(cam.getPixelsRef());
