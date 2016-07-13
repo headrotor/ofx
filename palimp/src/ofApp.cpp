@@ -173,8 +173,10 @@ void ofApp::init_idle() {
 	//only show png files
 	imgs.allowExt("png");
 	//populate the directory object
-	imgs.listDir();
+	//imgs.listDir();
 
+	imgs.getSorted();
+	imgs.listDir();
 //	if (imgs.size() > 0) {
 //		cout << "loading color file " << imgs.getPath(imgs.size() - 1) << "\n";
 //		idle_image.load(imgs.getFile(imgs.size()-1));
