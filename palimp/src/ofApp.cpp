@@ -112,22 +112,24 @@ void ofApp::update() {
 			if (avg_yvel > 10.0) {
 				state.set(S_YES_IMG, 3.);
 				store_image();
+				yes_flag = true;
 			}
 			if (avg_xvel > 15.0) {
-				state.set(S_NO_IMG, 3.);
+				state.set(S_NO_IMG, 5.);
+				yes_flag = false;
 			}
 		}
 		break;
 
 	case S_YES_IMG:
 		if (state.timeout()) {
-			state.set(S_IDLE, 2);
+			state.set(S_IDLE, 10);
 		}
 		break;
 
 	case S_NO_IMG:
 		if (state.timeout()) {
-			state.set(S_IDLE, 2);
+			state.set(S_IDLE, 10);
 		}
 		break;
 	}
@@ -157,7 +159,6 @@ void ofApp::draw() {
 	case S_YES_IMG:
 		msg.drawString("Thank you!", 100, 300);
 		break;
-
 	case S_NO_IMG:
 		msg.drawString("OK, thanks anyway!", 50, ofGetHeight() - 100);
 		break;
@@ -174,16 +175,16 @@ void ofApp::init_idle() {
 	//populate the directory object
 	imgs.listDir();
 
-	if (imgs.size() > 0) {
-		cout << "loading color file " << imgs.getPath(imgs.size() - 1) << "\n";
-		idle_image.load(imgs.getFile(imgs.size()-1));
-	}	
+//	if (imgs.size() > 0) {
+//		cout << "loading color file " << imgs.getPath(imgs.size() - 1) << "\n";
+//		idle_image.load(imgs.getFile(imgs.size()-1));
+//	}	
 
 	if (imgs.size() > NUM_IMAGES + 1) {
 		for (int i = 0; i < NUM_IMAGES;  i++) {
 			// load most recent images
 			int j = imgs.size() - i - 1;
-			cout << "loading gray file " << imgs.getPath(j);
+			cout << "loading gray file " << imgs.getPath(j) << "\n";
 			gray_images[i].load(imgs.getFile(j));
 			gray_images[i].setImageType(OF_IMAGE_GRAYSCALE);
 
@@ -215,6 +216,7 @@ void ofApp::store_image() {
 	sprintf(name, "%sx%03dy%03dw%03dh%03d.png", timestamp, int(r.x), int(r.y), int(r.width), int(r.height));
 	cout << "saving image: " << name;
 	saveimg.save(name);
+	idle_image.clone(saveimg);
 	id++;
 
 }
@@ -223,16 +225,21 @@ void ofApp::store_image() {
 void ofApp::draw_idle() {
 	// list of images in ofDirectory imgs, load and display
 	ofSetColor(255, 255, 255, 255);
-	idle_image.draw(0, 0, ofGetWidth(), ofGetHeight());
 	for (int i = 0; i < NUM_IMAGES; i++) {
 		//ofSetColor(255, 255, 255, int((100 / (i + 1)) * (sin(float(i)*0.2*ofGetElapsedTimef()) + 1.)));
-		ofSetColor(255, 255, 255, int(100 * (sin(float(i)*0.2*ofGetElapsedTimef()) + 1./(i+1))));
+		ofSetColor(255, 255, 255, int(100 * (sin(float(i)*0.2*ofGetElapsedTimef()) + 1. / (i + 1))));
 		//ofSetColor(255, 255, 255, 100);
 		gray_images[i].draw(0,0,ofGetWidth(),ofGetHeight());
 		//ofSetColor(0,255,0,255);
 		//ofRect(gray_rects[i]);
-
 	}
+
+	if (yes_flag) {
+		ofSetColor(255, 255, 255, int(127 * (cos(0.5*ofGetElapsedTimef() + 1))));
+		idle_image.draw(0, 0, ofGetWidth(), ofGetHeight());
+	}
+	ofSetColor(255, 255, 255, 127);
+	grayimg.draw(0, 0, ofGetWidth(), ofGetHeight());
 
 	return;
 

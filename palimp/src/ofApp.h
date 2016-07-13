@@ -54,6 +54,7 @@ public:
 	ofRectangle parse_path(string path);
 
 	bool store_flag = false; // store only one image per face detected
+	bool yes_flag = false; // show recent face in idle if yes
 
 	ofVideoGrabber cam;
 	ofxCv::ObjectFinder finder;
