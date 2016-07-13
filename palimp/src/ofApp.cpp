@@ -22,7 +22,9 @@ void ofApp::setup() {
 	grabimg.allocate(CAM_WIDTH, CAM_HEIGHT, OF_IMAGE_COLOR);
 	colorimg.allocate(CAM_WIDTH, CAM_HEIGHT);
 	grayimg.allocate(CAM_WIDTH, CAM_HEIGHT);
-
+	// something to display if facefinder doesn't
+	grayimg.set(127.0);
+	
 	// state machine handling
 	state.set(S_IDLE, 0);
 
@@ -86,7 +88,7 @@ void ofApp::update() {
 				state.set(S_HELLO, 5.);
 				// grab image when first detected
 				//cout << "got saveimg\n";
-				saveimg.setFromPixels(cam.getPixelsRef());
+				saveimg.setFromPixels(cam.getPixels());
 				saverect = finder.getObjectSmoothed(0);
 			}
 		}
@@ -136,10 +138,10 @@ void ofApp::draw() {
 	ofSetHexColor(0xFFFFFFFF);
 	grayimg.draw(0, 0, ofGetWidth(), ofGetHeight());
 
-	ofSetHexColor(0xCCCCCC);
 	ofNoFill();
 	ofSetHexColor(0xFFFF00FF);
 	ofDrawRectRounded(facerect.x * xscale, facerect.y*yscale, facerect.width*xscale, facerect.height*yscale, 30.0);
+
 
 	switch (state.state) {
 	case S_IDLE:
@@ -212,7 +214,7 @@ void ofApp::store_image() {
 	char name[256];
 	sprintf(name, "%sx%03dy%03dw%03dh%03d.png", timestamp, int(r.x), int(r.y), int(r.width), int(r.height));
 	cout << "saving image: " << name;
-	saveimg.saveImage(name);
+	saveimg.save(name);
 	id++;
 
 }
@@ -238,7 +240,6 @@ void ofApp::draw_idle() {
 	int x = 0;
 	int y = 0;
 	int maxy = -1;
-	int ss = 150;
 	for (int i = 0; i < NUM_IMAGES; i++) {
 		//ofSetColor(255, 255, 255, int(127 * (sin(float(i)*0.2*ofGetElapsedTimef()) + 1.)));
 		ofSetColor(255, 255, 255, 255);
@@ -266,7 +267,7 @@ void ofApp::keyPressed(int key) {
 	}
 	if (key == 's') {
 		// test back-to-idle handling
-		saveimg.setFromPixels(cam.getPixelsRef());
+		saveimg.setFromPixels(cam.getPixels());
 		if (finder.size()) {
 			saverect = finder.getObjectSmoothed(0);
 			store_image();
