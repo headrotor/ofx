@@ -81,7 +81,7 @@ void ofApp::update() {
 		if (finder.size()) {
 			// found face, so go to capture mode
 			// check for face size here
-			if (state.timeout() && (facerect.width*xscale > ofGetWidth()/3.0)) {
+			if (state.timeout() && (facerect.width*xscale > ofGetWidth()/5.0)) {
 				avg_xvel = 0;
 				avg_yvel = 0;
 				//disabled to test idle
