@@ -81,11 +81,11 @@ void ofApp::update() {
 		if (finder.size()) {
 			// found face, so go to capture mode
 			// check for face size here
-			if (state.timeout() && (facerect.width*xscale > ofGetWidth()/5.0)) {
+			if (state.timeout() && (facerect.width*xscale > ofGetWidth() / 5.0)) {
 				avg_xvel = 0;
 				avg_yvel = 0;
 				//disabled to test idle
-				state.set(S_HELLO, 5.);
+				state.set(S_QUESTION, 2.);
 				// grab image when first detected
 				//cout << "got saveimg\n";
 				saveimg.setFromPixels(cam.getPixels());
@@ -95,6 +95,11 @@ void ofApp::update() {
 		break;
 
 	case S_HELLO:
+		if (state.timeout()) {
+			state.set(S_QUESTION, 5);
+		}
+
+	case S_QUESTION:
 		if (finder.size() == 0) {
 			//cout << "timer: " << state.time_elapsed() << "\n";
 			if (state.timeout()) {
@@ -152,13 +157,20 @@ void ofApp::draw() {
 
 	case S_HELLO:
 		msg.drawString("Hello!", 50, 100);
+		break;
+
+	case S_QUESTION:
+		msg.drawString("Hello!", 50, 100);
 		msg.drawString("May we take your picture?", 50, ofGetHeight() - 150);
 		msg.drawString("(nod yes or no)", 50, ofGetHeight() - 75);
 		break;
 
 	case S_YES_IMG:
 		msg.drawString("Thank you!", 100, 300);
+		ofSetColor(255, 255, 255, 127);
+		idle_image.draw(0, 0, ofGetWidth(), ofGetHeight());
 		break;
+
 	case S_NO_IMG:
 		msg.drawString("OK, thanks anyway!", 50, ofGetHeight() - 100);
 		break;
@@ -328,13 +340,18 @@ bool StateMach::timeout(void) {
 }
 
 void StateMach::print(void) {
-
 	switch (state) {
 	case S_IDLE:
 		cout << "State: IDLE\n";
 		break;
 	case S_HELLO:
 		cout << "State: HELLO\n";
+		break;
+	case S_QUESTION:
+		cout << "State: HELLO\n";
+		break;
+	case S_YES_COUNT:
+		cout << "State: YES_COUNT\n";
 		break;
 	case S_CAPTURE:
 		cout << "State: CAPTURE\n";

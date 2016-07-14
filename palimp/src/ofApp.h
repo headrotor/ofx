@@ -16,7 +16,9 @@
 // state constants
 #define S_IDLE		1000 // no face recognized
 #define S_HELLO	    1001 // face recognized
+#define S_QUESTION	1007 // display question
 #define S_CAPTURE	1002 // face recognized, show greeting
+#define S_YES_COUNT 1008 // count down to image capture
 #define S_YES_IMG	1003 // save image, show thanks
 #define S_NO_IMG	1004 // don't save image, show thanks
 
