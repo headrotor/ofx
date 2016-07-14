@@ -85,7 +85,7 @@ void ofApp::update() {
 				avg_xvel = 0;
 				avg_yvel = 0;
 				//disabled to test idle
-				state.set(S_QUESTION, 2.);
+				state.set(S_HELLO, 2.);
 				// grab image when first detected
 				//cout << "got saveimg\n";
 				saveimg.setFromPixels(cam.getPixels());
@@ -95,6 +95,9 @@ void ofApp::update() {
 		break;
 
 	case S_HELLO:
+		if (finder.size() == 0) {
+				state.set(S_NO_IMG, 2.);
+		}
 		if (state.timeout()) {
 			state.set(S_QUESTION, 5);
 		}
