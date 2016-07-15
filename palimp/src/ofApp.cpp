@@ -58,22 +58,43 @@ void ofApp::update() {
 			cv::Vec2f v = finder.getVelocity(0);
 			vel = toOf(v);
 			facerect = finder.getObjectSmoothed(0);
-			cout << "found\n";
+			// scale by size of camera and face rect to normalize motion
+			vel.x *= 500./facerect.x;
+			vel.y *= 500./facerect.y;
+
+			//cout << "velx:" << setw(6) << setprecision(2) << vel.x;
+			//cout << " vely: " << setw(6) << setprecision(2) << vel.y << "\n";
+
+			float mix = 0.3;
+			avg_xvel = mix*abs(vel.x) + 0.9*(1 - mix)*avg_xvel;
+			avg_yvel = mix*abs(vel.y) + 0.9*(1 - mix)*avg_yvel;
+			/*
+			cout << " avg_x:" << fixed << setw(6) << setprecision(1) << avg_xvel;
+			cout << " avg_y: " << fixed << setw(6) << setprecision(1) << avg_yvel << "\n";
+			if (avg_xvel > 35)
+				cout << "X NO----";
+			else
+				cout << "        ";
+			if (avg_yvel > 25)
+				cout << "Y+YES+++\n";
+			else
+				cout << "        \n";
+			*/
+
 		}
 	}
 
 	// state machine handling
 	switch (state.state) {
 	case S_IDLE:
-		//update_idle();
 		if (finder.size() > 0) {
 			// found face, so go to capture mode
 			// check for face size here
 			if (state.timeout() && (facerect.width*xscale > ofGetWidth() / 5.0)) {
-				avg_xvel = 0;
-				avg_yvel = 0;
+
 				state.set(S_HELLO, 2.);
 				// grab image when first detected
+
 			}
 		}
 		break;
@@ -83,64 +104,50 @@ void ofApp::update() {
 		if (finder.size() == 0) {
 			state.set(S_NO_IMG, 2.);
 		}
-*/
+		*/
+		//update_idle();
+		yes_flag = false;
+		avg_xvel = 0;
+		avg_yvel = 0;
 		if (state.timeout()) {
 			state.set(S_QUESTION, 5);
 		}
 
 	case S_QUESTION:
-		if (finder.size() == 0) {
-			//cout << "timer: " << state.time_elapsed() << "\n";
-			if (state.timeout()) {
-				state.set(S_NO_IMG, 2.);
-			}
+		if (state.timeout()) {
+			// no obvious yes, so default to no
+			state.set(S_NO_IMG, 2.);
 		}
-		else {
-			float mix = 0.7;
-			avg_xvel = mix*fabs(vel.x) + (1 - mix)*avg_xvel;
-			avg_yvel = mix*fabs(vel.y) + (1 - mix)*avg_yvel;
-			//cout << std::fixed << std::showpoint;
-			//cout << "Y vel:" << setprecision(3) << avg_xvel;
-			//cout << "    X vel:" << setprecision(3) << avg_yvel;
-			//cout << "\n";
-			if (avg_yvel > 10.0) {
+		if (finder.size() > 0) {
+			if (avg_yvel > 25.0) {
 				state.set(S_THREE, 1.);
 			}
-			if (avg_xvel > 15.0) {
-				state.set(S_NO_IMG, 5.);
-				yes_flag = false;
-			}
+			//if (avg_xvel > 45.0) {
+			//	state.set(S_NO_IMG, 2.);
+			//	yes_flag = false;
+			//}
 		}
 		break;
 
 	case S_THREE:
-		if (finder.size() == 0) {
-			state.set(S_NO_IMG, 2.);
-		}
 		if (state.timeout()) {
-			state.set(S_TWO, 1);
+			state.set(S_TWO, 1.);
 		}
 
 	case S_TWO:
-		if (finder.size() == 0) {
-			state.set(S_NO_IMG, 2.);
-		}
 		if (state.timeout()) {
-			state.set(S_ONE, 1);
+			state.set(S_ONE, 1.);
 		}
 
 	case S_ONE:
-		if (finder.size() == 0) {
-			state.set(S_NO_IMG, 2.);
-		}
 		if (state.timeout()) {
 			state.set(S_CAPTURE, 2);
 		}
 
 	case S_CAPTURE:
-		if (finder.size() == 0) {
-			state.set(S_NO_IMG, 2.);
-		}
+		//if (finder.size() == 0) {
+		//	state.set(S_NO_IMG, 2.);
+		//}
 		if (state.timeout()) {
 			state.set(S_YES_IMG, 2);
 			saveimg.setFromPixels(cam.getPixels());
@@ -173,6 +180,10 @@ void ofApp::draw() {
 	ofSetHexColor(0xFFFF00FF);
 	ofDrawRectRounded(facerect.x * xscale, facerect.y*yscale, facerect.width*xscale, facerect.height*yscale, 30.0);
 
+	
+	float underface_x = facerect.x * xscale;
+	//float underface_y = min(float(facerect.y + facerect.height + 10.), ofGetHeight() - 30.);
+	float underface_y = std::min(float(facerect.getBottom()*yscale + 20.0), float(ofGetHeight() - 30));
 	switch (state.state) {
 	case S_IDLE:
 		draw_idle();
@@ -189,23 +200,24 @@ void ofApp::draw() {
 		break;
 
 	case S_THREE:
-		msg.drawString("3...", 50, ofGetHeight() - 75);
+			
+		msg.drawString("Ready! 3...", underface_x, underface_y);
 		break;
 
 	case S_TWO:
-		msg.drawString("3... 2...", 50, ofGetHeight() - 75);
+		msg.drawString("Ready! 3... 2...", underface_x, underface_y);
 		break;
 
 	case S_ONE:
-		msg.drawString("3... 2... 1...", 50, ofGetHeight() - 75);
+		msg.drawString("Ready! 3... 2... 1...", underface_x, underface_y);
 		break;
 
 	case S_CAPTURE:
-		msg.drawString("3... 2... 1... Pose!", 50, ofGetHeight() - 75);
+		msg.drawString("Ready! 3... 2... 1... Pose!", underface_x, underface_y);
 		break;
 
 	case S_YES_IMG:
-		msg.drawString("Thank you!", 100, 300);
+		msg.drawString("Thank you!", underface_x, underface_y);
 		ofSetColor(255, 255, 255, 127);
 		idle_image.draw(0, 0, ofGetWidth(), ofGetHeight());
 		break;
@@ -288,7 +300,8 @@ void ofApp::draw_idle() {
 	}
 
 	if (yes_flag) {
-		ofSetColor(255, 255, 255, int(127 * (cos(0.5*ofGetElapsedTimef() + 1))));
+		ofSetColor(255, 255, 255, int(127 * (cos(0.5*state.time_elapsed()) + 1)));
+
 		idle_image.draw(0, 0, ofGetWidth(), ofGetHeight());
 	}
 	ofSetColor(255, 255, 255, 127);
