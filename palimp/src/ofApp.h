@@ -16,11 +16,14 @@
 // state constants
 #define S_IDLE		1000 // no face recognized
 #define S_HELLO	    1001 // face recognized
-#define S_QUESTION	1007 // display question
-#define S_CAPTURE	1002 // face recognized, show greeting
-#define S_YES_COUNT 1008 // count down to image capture
-#define S_YES_IMG	1003 // save image, show thanks
-#define S_NO_IMG	1004 // don't save image, show thanks
+#define S_QUESTION	1002 // display question
+#define S_THREE	    1003 // display question
+#define S_TWO	    1004 // display question
+#define S_ONE	    1005 // display question
+#define S_CAPTURE	1006 // face recognized, show greeting
+#define S_YES_COUNT 1007 // count down to image capture
+#define S_YES_IMG	1008 // save image, show thanks
+#define S_NO_IMG	1009 // don't save image, show thanks
 
 class StateMach {
 	// state machine for game transitions
@@ -33,6 +36,7 @@ public:
 	bool timeout(void);
 	void reset_timer();
 	float time_elapsed();
+	float frac_time_elapsed();
 
 };
 

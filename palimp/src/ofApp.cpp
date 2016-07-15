@@ -11,7 +11,7 @@ void ofApp::setup() {
 	ofSetFrameRate(120);
 	finder.setup("haarcascade_frontalface_default.xml");
 	finder.setPreset(ObjectFinder::Fast);
-	//finder.setFindBiggestObject(true);
+	finder.setFindBiggestObject(true);
 	finder.getTracker().setSmoothingRate(.3);
 	//cam.listDevices();
 	cam.setDeviceID(0);
@@ -55,22 +55,10 @@ void ofApp::update() {
 		//cropimg = grayimg(cropr);
 		vel.set(0, 0);
 		if (finder.size() > 0) {
-			id = 0;
-			float max_w = -1.;
-			// find biggest face
-			ofRectangle r;
-			for (int i = 0; i < finder.size(); i++) {
-				r = finder.getObjectSmoothed(i);
-				if (r.width > max_w) {
-					id = i;
-					facerect = r;
-					max_w = r.width;
-				}
-			}
-			cv::Vec2f v = finder.getVelocity(id);
+			cv::Vec2f v = finder.getVelocity(0);
 			vel = toOf(v);
-			facerect = finder.getObjectSmoothed(id);
-
+			facerect = finder.getObjectSmoothed(0);
+			cout << "found\n";
 		}
 	}
 
@@ -78,26 +66,24 @@ void ofApp::update() {
 	switch (state.state) {
 	case S_IDLE:
 		//update_idle();
-		if (finder.size()) {
+		if (finder.size() > 0) {
 			// found face, so go to capture mode
 			// check for face size here
 			if (state.timeout() && (facerect.width*xscale > ofGetWidth() / 5.0)) {
 				avg_xvel = 0;
 				avg_yvel = 0;
-				//disabled to test idle
 				state.set(S_HELLO, 2.);
 				// grab image when first detected
-				//cout << "got saveimg\n";
-				saveimg.setFromPixels(cam.getPixels());
-				saverect = finder.getObjectSmoothed(0);
 			}
 		}
 		break;
 
 	case S_HELLO:
+	/*
 		if (finder.size() == 0) {
-				state.set(S_NO_IMG, 2.);
+			state.set(S_NO_IMG, 2.);
 		}
+*/
 		if (state.timeout()) {
 			state.set(S_QUESTION, 5);
 		}
@@ -118,9 +104,7 @@ void ofApp::update() {
 			//cout << "    X vel:" << setprecision(3) << avg_yvel;
 			//cout << "\n";
 			if (avg_yvel > 10.0) {
-				state.set(S_YES_IMG, 3.);
-				store_image();
-				yes_flag = true;
+				state.set(S_THREE, 1.);
 			}
 			if (avg_xvel > 15.0) {
 				state.set(S_NO_IMG, 5.);
@@ -128,6 +112,42 @@ void ofApp::update() {
 			}
 		}
 		break;
+
+	case S_THREE:
+		if (finder.size() == 0) {
+			state.set(S_NO_IMG, 2.);
+		}
+		if (state.timeout()) {
+			state.set(S_TWO, 1);
+		}
+
+	case S_TWO:
+		if (finder.size() == 0) {
+			state.set(S_NO_IMG, 2.);
+		}
+		if (state.timeout()) {
+			state.set(S_ONE, 1);
+		}
+
+	case S_ONE:
+		if (finder.size() == 0) {
+			state.set(S_NO_IMG, 2.);
+		}
+		if (state.timeout()) {
+			state.set(S_CAPTURE, 2);
+		}
+
+	case S_CAPTURE:
+		if (finder.size() == 0) {
+			state.set(S_NO_IMG, 2.);
+		}
+		if (state.timeout()) {
+			state.set(S_YES_IMG, 2);
+			saveimg.setFromPixels(cam.getPixels());
+			saverect = finder.getObjectSmoothed(0);
+			store_image();
+			yes_flag = true;
+		}
 
 	case S_YES_IMG:
 		if (state.timeout()) {
@@ -149,9 +169,9 @@ void ofApp::draw() {
 	grayimg.draw(0, 0, ofGetWidth(), ofGetHeight());
 
 	ofNoFill();
+
 	ofSetHexColor(0xFFFF00FF);
 	ofDrawRectRounded(facerect.x * xscale, facerect.y*yscale, facerect.width*xscale, facerect.height*yscale, 30.0);
-
 
 	switch (state.state) {
 	case S_IDLE:
@@ -166,6 +186,22 @@ void ofApp::draw() {
 		msg.drawString("Hello!", 50, 100);
 		msg.drawString("May we take your picture?", 50, ofGetHeight() - 150);
 		msg.drawString("(nod yes or no)", 50, ofGetHeight() - 75);
+		break;
+
+	case S_THREE:
+		msg.drawString("3...", 50, ofGetHeight() - 75);
+		break;
+
+	case S_TWO:
+		msg.drawString("3... 2...", 50, ofGetHeight() - 75);
+		break;
+
+	case S_ONE:
+		msg.drawString("3... 2... 1...", 50, ofGetHeight() - 75);
+		break;
+
+	case S_CAPTURE:
+		msg.drawString("3... 2... 1... Pose!", 50, ofGetHeight() - 75);
 		break;
 
 	case S_YES_IMG:
@@ -334,15 +370,25 @@ float StateMach::time_elapsed(void) {
 	return(ofGetElapsedTimef() - start_time);
 }
 
+// return the fraction of elapsed time that has passed 
+float StateMach::frac_time_elapsed(void) {
+	if (time_elapsed() > timeout_time) {
+		return 1.0;
+	}
+	return(time_elapsed()/timeout_time);
+}
+
+
 bool StateMach::timeout(void) {
 	if (timeout_time < 0)
-		return(false);
+		return(true);
 	if (time_elapsed() > timeout_time)
 		return(true);
 	return(false);
 }
 
 void StateMach::print(void) {
+	cout << "State ID:" << state << " ";
 	switch (state) {
 	case S_IDLE:
 		cout << "State: IDLE\n";
@@ -351,7 +397,16 @@ void StateMach::print(void) {
 		cout << "State: HELLO\n";
 		break;
 	case S_QUESTION:
-		cout << "State: HELLO\n";
+		cout << "State: QUESTION\n";
+		break;
+	case S_THREE:
+		cout << "State: THREE\n";
+		break;
+	case S_TWO:
+		cout << "State: TWO\n";
+		break;
+	case S_ONE:
+		cout << "State: ONE\n";
 		break;
 	case S_YES_COUNT:
 		cout << "State: YES_COUNT\n";
@@ -364,6 +419,9 @@ void StateMach::print(void) {
 		break;
 	case S_YES_IMG:
 		cout << "State: YES_IMG\n";
+		break;
+	default:
+		cout << "unknown state\n";
 		break;
 	}
 }
