@@ -322,3 +322,8 @@ void StateMach::print_state(void) {
 		break;
 	}
 }
+void ofApp::clean_exit(int signal) {
+	// clean exit, signal handler
+	cout << "FACEBALL Exit signal caught, bye!\n";
+	ofExit();
+}

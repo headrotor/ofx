@@ -84,6 +84,8 @@ public:
 	void draw_world_old();
 	// start new game
 	void reset_game();
+	// clean exit (don't hang camera!) on SIGUSR1
+	static void clean_exit(int signal);
 
 
 	// flags for testing behaviors
