@@ -13,7 +13,8 @@ void ofApp::setup() {
 
 
 
-	//signal(SIGQUIT, clean_exit());
+  if (signal(SIGUSR1, clean_exit) == SIG_ERR)
+    cout << "can't catch signal\n";
 
 	ofSetVerticalSync(true);
 	ofSetFrameRate(120);
@@ -341,10 +342,10 @@ void ofApp::draw_idle() {
 
 }
 
-void ofApp::clean_exit(int signal {
-	// clean exit, signal handler
-	cout << "Exit signal caught, bye!\n"
-	ofExit();
+void ofApp::clean_exit(int signal){
+  // clean exit, signal handler
+  cout << "Exit signal caught, bye!\n";
+  ofExit();
 }
 void ofApp::keyPressed(int key) {
 		if (key == 'x') {
