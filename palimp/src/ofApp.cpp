@@ -5,8 +5,16 @@
 
 using namespace ofxCv;
 using namespace cv;
+#include <signal.h>  
 
 void ofApp::setup() {
+
+	// signal handler for clean exit
+
+
+
+	//signal(SIGQUIT, clean_exit());
+
 	ofSetVerticalSync(true);
 	ofSetFrameRate(120);
 	finder.setup("haarcascade_frontalface_default.xml");
@@ -333,9 +341,13 @@ void ofApp::draw_idle() {
 
 }
 
-
+void ofApp::clean_exit(int signal {
+	// clean exit, signal handler
+	cout << "Exit signal caught, bye!\n"
+	ofExit();
+}
 void ofApp::keyPressed(int key) {
-	if (key == 'x') {
+		if (key == 'x') {
 		ofExit();
 	}
 	if (key == 's') {

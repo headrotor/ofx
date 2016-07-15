@@ -49,6 +49,7 @@ public:
 	void draw();
 	void keyPressed(int key);
 	void store_image();
+	void clean_exit(int signal);
 	vector<string> arguments;
 	void init_idle();
 	//void update_idle();
