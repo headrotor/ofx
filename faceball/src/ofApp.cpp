@@ -29,7 +29,7 @@ void ofApp::setup() {
 	
 	reset_game();
 	faceCenter.set(CAM_WIDTH / 2.0, CAM_HEIGHT / 2.0);
-	ofRectMode(OF_RECTMODE_CENTER);
+	//ofRectMode(OF_RECTMODE_CENTER);
 
 
 	// set up font  
@@ -131,10 +131,18 @@ void ofApp::update() {
 				state.set_state(S_BACKWARD);
 				if (loc_flag) {
 					// give ball vector depending on distance from paddle center
-					ofPoint bc = b.getCenter();
+					ofPoint bc = ofPoint(b.pos.x, b.pos.y, b.pos.z);
 					ofPoint pc = paddleRect.getCenter();
 					ofVec2f spin = pc - bc;
-					b.bounce(spin / -20.0);
+					//b.bounce(spin / -20.0);
+
+					// compute return vector to make ball hit center of goal
+					ofPoint gc = goalRect.getCenter();
+					gc.z = Z_FIELD_END;
+					ofVec3f straight = gc - bc;
+					b.bounce(straight / 100.0);
+					break;
+
 				}
 				else {
 					cv::Vec2f v = finder.getVelocity(0);
@@ -150,7 +158,10 @@ void ofApp::update() {
 		}
 		break;
 	case S_BACKWARD:
-		if (b.pos.z < Z_FAR) {
+		cout << "ball:" << b.getCenter() << " Z " << b.pos.z;
+		cout << " goal " << goalRect.getCenter() << " Z " <<  Z_FIELD_END << "\n";
+
+		if (b.pos.z < Z_FIELD_END) {
 			b.reset();
 			celebrate = Z_FAR / 2;
 			score++;
@@ -209,6 +220,17 @@ void ofApp::draw() {
 	ofDrawBitmapString("fps: " + ofToString(ofGetFrameRate()), 10, 10);
 	float spinX = sin(ofGetElapsedTimef()*.35f);
 	float spinY = cos(ofGetElapsedTimef()*.075f);
+
+	ofPolyline debug;
+	ofPoint gc = ofPoint(goalRect.getCenter());
+	gc.z = Z_FIELD_END;
+	ofPoint bc = ofPoint(b.pos.x, b.pos.y, b.pos.z);
+
+	debug.addVertex(bc);
+	debug.addVertex(gc);
+	ofSetColor(255, 0, 0);
+	debug.draw();
+
 
 	if (drawcam) {
 		ofSetColor(255, 255, 255);//stroke color  
@@ -274,8 +296,17 @@ void ofApp::update_celebrate(int win) {
 
 
 
+
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key) {
+	
+	ofPoint gc = goalRect.getCenter();
+	gc.z = Z_FIELD_END;
+	ofPoint bc = ofPoint(b.pos.x, b.pos.y, b.pos.z);
+
+	ofVec3f straight = gc - bc;
+
+
 	switch (key) {
 	case 'c':
 		drawcam = !drawcam;
@@ -289,8 +320,20 @@ void ofApp::keyPressed(int key) {
 		ofSetFullscreen(false);
 		break;
 
+	case 'b':
+		// bounce
+		cout << "bounce request \n";
+		cout << "ball:" << b.getCenter() << " Z " << b.pos.z;
+		cout << " goal " << goalRect.getCenter() << " Z " << Z_FIELD_END << "\n";
+		cout << " direction: " << straight << "\n";
+
+		state.set_state(S_BACKWARD);
+		b.bounce(straight / 100.0);
+		break;
+
 	case 'x':
 		ofExit();
+		break;
 
 	}
 

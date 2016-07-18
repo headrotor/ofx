@@ -43,7 +43,7 @@ public:
 
 	void set_velxy(float vx, float vy);
 	void set_velz(float vz);
-	void bounce(ofVec2f spin);
+	void bounce(ofVec3f spin);
 	void reset(void);
 	void set_color(ofColor c);
 
@@ -104,6 +104,7 @@ public:
 	int drop_faces; // count of frames with no face detected, if above thresh then reset game
 
 	bool drawcam;
+
 
 	Ball b;
 

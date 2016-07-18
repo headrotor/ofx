@@ -28,7 +28,9 @@ void Ball::reset(void) {
 	//vel.set(5.0, 5.0, 5);
 	//pos.set(0, 0, Z_FAR);
 	vel.set(ofRandomf()*1.0, ofRandomf()*0.5, 5);
-	pos.set(CAM_WIDTH/2., CAM_HEIGHT/2, Z_FAR);
+	//pos.set(CAM_WIDTH / 2., CAM_HEIGHT / 2, Z_FAR);	
+	pos.set(0, 0, Z_FAR);
+
 }
 void Ball::draw() {
 
@@ -59,10 +61,12 @@ void Ball::set_velxy(float xv, float yv) {
 void Ball::set_velz(float zv) {
 	vel.z = zv;
 }
-void Ball::bounce(ofVec2f spin) {
+void Ball::bounce(ofVec3f spin) {
 	cout << "bounce spin: " << spin;
-	vel.x = spin.x;
-	vel.y = spin.y;
-	vel.z = -10.0;
+	//spin.z = -spin.z;
+	vel = spin;
+	//vel.x = spin.x;
+	//vel.y = spin.y;
+	//vel.z = -10.0;
 
 }
