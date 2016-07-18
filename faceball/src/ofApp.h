@@ -62,9 +62,18 @@ class StateMach {
 	// state machine for game transitions
 public:
 	int state;
-	void set_state(int next_state);
-	void print_state(void);
+	float start_time;
+	float timeout_time; // timeout if in this state >
+	void set(int next_state, float timeout);
+	void print(void);
+	bool timeout(void);
+	void reset_timer();
+	float time_elapsed();
+	float frac_time_elapsed();
+
 };
+
+
 
 class ofApp : public ofBaseApp {
 public:

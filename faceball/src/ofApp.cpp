@@ -62,7 +62,7 @@ void ofApp::reset_game(void) {
 	ofApp::drop_faces = 0;
 	score = 0;
 	paddleSize = 300;
-	state.set_state(S_IDLE);
+	state.set(S_IDLE, 0);
 	b.reset();
 	cout << "RESET\n";
 
@@ -107,7 +107,7 @@ void ofApp::update() {
 	switch (state.state) {
 	case S_IDLE:
 		if (finder.size()) {
-			state.set_state(S_FORWARD);
+			state.set(S_FORWARD,0);
 			drop_faces = 0;
 		}
 		break;
@@ -128,17 +128,20 @@ void ofApp::update() {
 		if ((b.pos.z > Z_CLOSE)) {
 			if (paddleRect.inside(b.pos.x, b.pos.y)) {
 				cout << "Bounce!\n";
-				state.set_state(S_BACKWARD);
+				state.set(S_BACKWARD,0);
 				if (loc_flag) {
-					// give ball vector depending on distance from paddle center
+					// get distance of ball impact from paddle center
 					ofPoint bc = ofPoint(b.pos.x, b.pos.y, b.pos.z);
 					ofPoint pc = paddleRect.getCenter();
-					ofVec2f spin = pc - bc;
-					//b.bounce(spin / -20.0);
-
+					// make it at the same z plane as ball
+					ofVec3f spin = pc - bc;
+					// we don't care about Z distance
+					spin.z = 0;
 					// compute return vector to make ball hit center of goal
 					ofPoint gc = goalRect.getCenter();
 					gc.z = Z_FIELD_END;
+					// move goal center by scaled spin offset. Increasing spin means harder
+					gc = gc + (4 * spin);
 					ofVec3f straight = gc - bc;
 					b.bounce(straight / 100.0);
 					break;
@@ -152,7 +155,7 @@ void ofApp::update() {
 
 			}
 			else {
-				state.set_state(S_IDLE);
+				state.set(S_IDLE,0);
 			}
 
 		}
@@ -166,13 +169,13 @@ void ofApp::update() {
 			celebrate = Z_FAR / 2;
 			score++;
 			cout << "WIN!" << "score " << score << "\n";
-			state.set_state(S_CELEBRATE);
+			state.set(S_CELEBRATE,0);
 		}
 		break;
 	case S_CELEBRATE:
 		if (celebrate > 300) {
 			b.reset();
-			state.set_state(S_IDLE);
+			state.set(S_IDLE,0);
 		}
 		break;
 
@@ -327,7 +330,7 @@ void ofApp::keyPressed(int key) {
 		cout << " goal " << goalRect.getCenter() << " Z " << Z_FIELD_END << "\n";
 		cout << " direction: " << straight << "\n";
 
-		state.set_state(S_BACKWARD);
+		state.set(S_BACKWARD,0);
 		b.bounce(straight / 100.0);
 		break;
 
@@ -341,15 +344,44 @@ void ofApp::keyPressed(int key) {
 }
 
 
-
-//----------------------------- state machine handlind  -
-
-void StateMach::set_state(int next_state) {
+// State machine handling ------------------------------------------------------------
+void StateMach::set(int next_state, float timeout) {
 	state = next_state;
-	print_state();
+	timeout_time = timeout;
+	// default no timeout
+	if (timeout >= 0) {
+		ofResetElapsedTimeCounter();
+		reset_timer();
+	}
+	print();
 }
 
-void StateMach::print_state(void) {
+void StateMach::reset_timer(void) {
+	start_time = ofGetElapsedTimef();
+}
+
+float StateMach::time_elapsed(void) {
+	return(ofGetElapsedTimef() - start_time);
+}
+
+// return the fraction of elapsed time that has passed 
+float StateMach::frac_time_elapsed(void) {
+	if (time_elapsed() > timeout_time) {
+		return 1.0;
+	}
+	return(time_elapsed() / timeout_time);
+}
+
+
+bool StateMach::timeout(void) {
+	if (timeout_time < 0)
+		return(true);
+	if (time_elapsed() > timeout_time)
+		return(true);
+	return(false);
+}
+
+void StateMach::print(void) {
 	switch (state) {
 	case S_IDLE:
 		cout << "State: IDLE\n";
