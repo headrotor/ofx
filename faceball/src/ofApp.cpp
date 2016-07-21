@@ -6,8 +6,9 @@ using namespace cv;
 
 
 void ofApp::setup() {
-	//ofSetVerticalSync(true);
+	ofSetVerticalSync(true);
 	//ofSetFrameRate(120);
+	ofSetFrameRate(60);
 	finder.setup("haarcascade_frontalface_default.xml");
 	finder.setPreset(ObjectFinder::Fast);
 	finder.setFindBiggestObject(true);
@@ -15,7 +16,7 @@ void ofApp::setup() {
 	// samller = smoother
 	finder.getTracker().setSmoothingRate(0.2);
 	// ignore low-contrast regions
-	//finder.setCannyPruning(true);
+	finder.setCannyPruning(true);
 	//cam.listDevices();
 	cam.setDeviceID(0);
 	cam.setup(CAM_WIDTH, CAM_HEIGHT);
