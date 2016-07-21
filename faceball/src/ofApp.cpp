@@ -186,7 +186,9 @@ void ofApp::update() {
 void ofApp::draw_world(void) {
 	// draw the score and the game world
 	//draw score
-	
+
+
+  
 	for (int i = 0; i<arguments.size(); ++i) {
 		ofDrawBitmapString(arguments.at(i), 20.0f, 20.0f*i);
 	}
@@ -220,7 +222,6 @@ void ofApp::draw_world(void) {
 }
 
 void ofApp::draw() {
-	ofDrawBitmapString("fps: " + ofToString(ofGetFrameRate()), 10, 10);
 	float spinX = sin(ofGetElapsedTimef()*.35f);
 	float spinY = cos(ofGetElapsedTimef()*.075f);
 
@@ -229,10 +230,14 @@ void ofApp::draw() {
 	gc.z = Z_FIELD_END;
 	ofPoint bc = ofPoint(b.pos.x, b.pos.y, b.pos.z);
 
+
+	
 	debug.addVertex(bc);
 	debug.addVertex(gc);
 	ofSetColor(255, 0, 0);
 	debug.draw();
+
+	ofDrawBitmapString("fps: " + ofToString(ofGetFrameRate()), 20, 20);
 
 
 	if (drawcam) {
