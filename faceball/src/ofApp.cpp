@@ -15,7 +15,7 @@ void ofApp::setup() {
 	// samller = smoother
 	finder.getTracker().setSmoothingRate(0.2);
 	// ignore low-contrast regions
-	finder.setCannyPruning(true);
+	//finder.setCannyPruning(true);
 	//cam.listDevices();
 	cam.setDeviceID(0);
 	cam.setup(CAM_WIDTH, CAM_HEIGHT);
@@ -237,7 +237,7 @@ void ofApp::draw() {
 	ofSetColor(255, 0, 0);
 	debug.draw();
 
-	ofDrawBitmapString("fps: " + ofToString(ofGetFrameRate()), 20, 20);
+	ofDrawBitmapString("fps: " + ofToString(ofGetFrameRate()), 50, 100);
 
 
 	if (drawcam) {
