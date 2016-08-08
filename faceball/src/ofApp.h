@@ -2,6 +2,7 @@
 
 #include "ofMain.h"
 #include "ofxCv.h"
+#include "ofxXmlSettings.h"
 
 #define RPI
 
@@ -39,15 +40,21 @@ public:
 	int score; //keeps score
 	void draw(void);
 	void update(int state);
-	void init(void);
+	void init(double speed);
 
 	void set_velxy(float vx, float vy);
 	void set_velz(float vz);
 	void bounce(ofVec3f spin);
-	void reset(void);
+	void reset();
 	void set_color(ofColor c);
 
 	ofPoint getCenter();  // get x, y center
+
+	// default Z speeds
+	double forwardSpeed; 
+	double reverseSpeed;
+
+	ofVec3f goalCenter;
 };
 
 
@@ -103,6 +110,9 @@ public:
 	// use location to control ball direction
 	bool loc_flag = true;
 
+	// precompute goal center
+	ofVec3f goalCenter;
+	
 	// update the celebration animation
 	void update_celebrate(int win);
 	int celebrate; 
@@ -160,4 +170,5 @@ public:
 	ofImage sunglasses;
 	ofImage saveimg;
 	uint16_t id;
+	ofxXmlSettings config;
 };

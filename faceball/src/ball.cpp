@@ -1,10 +1,11 @@
 #include "ofApp.h"
 
-void Ball::init(void) {
+void Ball::init(double speed) {
 	isp.setRadius(50);
 	isp.setResolution(1);
 	ofColor green(0, 255, 0);
 	set_color(green);
+	forwardSpeed = speed;
 	reset();
 }
 
@@ -24,25 +25,22 @@ void Ball::set_color(ofColor c) {
 	}
 }
 
-void Ball::reset(void) {
-	//vel.set(5.0, 5.0, 5);
-	//pos.set(0, 0, Z_FAR);
-	vel.set(ofRandomf()*1.0, ofRandomf()*0.5, 5);
-	//pos.set(CAM_WIDTH / 2., CAM_HEIGHT / 2, Z_FAR);	
-	pos.set(0, 0, Z_FAR);
-
+void Ball::reset() {
+	vel.set(ofRandomf()*1., ofRandomf()*0.5, forwardSpeed);
+	pos.set(ofGetWidth()/2 + ofRandomf()*100, ofGetHeight()/2 + ofRandomf()*100., Z_FAR);
 }
+
 void Ball::draw() {
 
 	isp.drawWireframe();
 }
 
-ofPoint Ball::getCenter() {
-	return ofPoint(pos.x, pos.y);
+ofVec3f Ball::getCenter() {
+	return pos;
 }
 
 void Ball::update(int state) {
-	pos = pos + vel;
+	pos = pos + vel*ofGetLastFrameTime();
 	//pos.set(ofGetWidth()*.1*index, ofGetHeight()*.07*index, z);
 	//pos.set(pos.x, pos.y + 0.007*z, z);
 	isp.setPosition(pos);
@@ -67,6 +65,5 @@ void Ball::bounce(ofVec3f spin) {
 	vel = spin;
 	//vel.x = spin.x;
 	//vel.y = spin.y;
-	//vel.z = -10.0;
-
+	// could do this better with spin as unit direction vector
 }

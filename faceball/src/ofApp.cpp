@@ -6,25 +6,78 @@ using namespace cv;
 
 
 void ofApp::setup() {
+
+	// load config file
+	config.loadFile("config.xml");
+	int frameRate;
+	if (config.tagExists("config:frameRate", 0)) {
+		frameRate = config.getValue("config:frameRate", 30);
+		cout << "\nframe rate from config file" << frameRate << "\n";
+	}
+	else {
+		cout << "\nerror reading frameRate from xml config file\n";
+		cout << "\nframe rate from config file" << frameRate << "\n";
+	}
+
+	double smoothingRate;
+	if (config.tagExists("config:smoothingRate", 0)) {
+		smoothingRate = config.getValue("config:smoothingRate", 0.2);
+		cout << "smoothing rate from config file: " << smoothingRate << "\n";
+	}
+	else {
+		cout << "error reading smoothingRate from xml config file\n";
+		smoothingRate = 0.2;
+	}
+
+	int cannyPruning;
+	if (config.tagExists("config:cannyPruning", 0)) {
+		cannyPruning = config.getValue("config:cannyPruning", 0);
+	}
+	else {
+		cout << "error reading cannyPruning from xml config file\n";
+		cannyPruning = 1;
+	}
+
+	double forwardSpeed = 10.0;
+	if (config.tagExists("config:forwardSpeed", 0)) {
+		forwardSpeed = config.getValue("config:forwardSpeed", 10.0);
+		cout << "forward speed from config file: " << forwardSpeed << "\n";
+	}
+	else {
+		cout << "error reading forwardSpeed from xml config file\n";
+	}
+
+	double reverseSpeed = 10.0;
+	if (config.tagExists("config:reverseSpeed", 0)) {
+		reverseSpeed = config.getValue("config:reverseSpeed", 10.0);
+		cout << "forward speed from config file: " << reverseSpeed << "\n";
+	}
+	else {
+		cout << "error reading reverseSpeed from xml config file\n";
+	}
+
+
+
 	ofSetVerticalSync(true);
-	//ofSetFrameRate(120);
-	ofSetFrameRate(60);
+	// 30 fps is about the best we can do on an rpi
+	ofSetFrameRate(frameRate);
+
 	finder.setup("haarcascade_frontalface_default.xml");
 	finder.setPreset(ObjectFinder::Fast);
 	finder.setFindBiggestObject(true);
-	//finder.getTracker().setSmoothingRate(.3);
-	// samller = smoother
-	finder.getTracker().setSmoothingRate(0.2);
+	finder.getTracker().setSmoothingRate(smoothingRate);
+	// smaller = smoother
+	//finder.getTracker().setSmoothingRate(smoothingRate);
 	// ignore low-contrast regions
-	finder.setCannyPruning(true);
+	finder.setCannyPruning((cannyPruning > 0));
+
 	//cam.listDevices();
 	cam.setDeviceID(0);
 	cam.setup(CAM_WIDTH, CAM_HEIGHT);
-	//cam.setup(640,480);
-	//sunglasses.load("sunglasses.png");
-	//ofEnableAlphaBlending();
 	drawcam = false;
-	b.init();
+	b.init(forwardSpeed);
+	b.reverseSpeed = reverseSpeed;
+
 	ofBackground(ofColor(20, 20, 20));
 
 	
@@ -34,7 +87,6 @@ void ofApp::setup() {
 
 
 	// set up font  
-	//font.loadFont("verdana.ttf", 36, true, false, true, 0.1);
 	font.loadFont("Hyperspace.otf", 36, true, false, true, 0.1);
 
 	// set up field
@@ -52,9 +104,10 @@ void ofApp::setup() {
 	float f_width = fabs(Z_FIELD_END - Z_FIELD_START);
 	field = field.plane(f_width / 2., f_width, 11, 21);
 	//field.setMode(OF_PRIMITIVE_TRIANGLE_FAN);
-	goalRect.set(ofGetWidth() / 2 - 200., ofGetHeight() - 100, 400, 200);
-
-
+	//goalRect.set(ofGetWidth() / 2 - 200., ofGetHeight() - 100, 400, 200);
+	goalRect.set(ofGetWidth() / 2 - 200., ofGetHeight(), 400, 200);
+	goalCenter = goalRect.getCenter();
+	goalCenter.z = Z_FIELD_END;
 }
 
 
@@ -139,18 +192,17 @@ void ofApp::update() {
 					// we don't care about Z distance
 					spin.z = 0;
 					// compute return vector to make ball hit center of goal
-					ofPoint gc = goalRect.getCenter();
-					gc.z = Z_FIELD_END;
 					// move goal center by scaled spin offset. Increasing spin means harder
-					gc = gc + (4 * spin);
-					ofVec3f straight = gc - bc;
-					b.bounce(straight / 100.0);
+					// gc = gc + (4 * spin);
+					ofVec3f straight = goalCenter - b.getCenter();
+					double reverseSpeed = config.getValue("config.reverseSpeed", 0.1);
+					b.bounce(straight * reverseSpeed);
 					break;
 
 				}
 				else {
-					cv::Vec2f v = finder.getVelocity(0);
-					ofVec2f spin = toOf(v);
+					//cv::Vec2f v = finder.getVelocity(0);
+					//ofVec2f spin = toOf(v);
 
 				}
 
@@ -163,7 +215,7 @@ void ofApp::update() {
 		break;
 	case S_BACKWARD:
 		cout << "ball:" << b.getCenter() << " Z " << b.pos.z;
-		cout << " goal " << goalRect.getCenter() << " Z " <<  Z_FIELD_END << "\n";
+		cout << "\n goal " << goalCenter <<  "\n";
 
 		if (b.pos.z < Z_FIELD_END) {
 			b.reset();
@@ -223,16 +275,14 @@ void ofApp::draw_world(void) {
 }
 
 void ofApp::draw() {
-	float spinX = sin(ofGetElapsedTimef()*.35f);
-	float spinY = cos(ofGetElapsedTimef()*.075f);
+	//float spinX = sin(ofGetElapsedTimef()*.35f);
+	//float spinY = cos(ofGetElapsedTimef()*.075f);
 
 	ofPolyline debug;
 	ofPoint gc = ofPoint(goalRect.getCenter());
 	gc.z = Z_FIELD_END;
 	ofPoint bc = ofPoint(b.pos.x, b.pos.y, b.pos.z);
 
-
-	
 	debug.addVertex(bc);
 	debug.addVertex(gc);
 	ofSetColor(255, 0, 0);
