@@ -1,9 +1,12 @@
 #pragma once
 
+#include <signal.h>
 #include "ofMain.h"
 #include "ofxCv.h"
 #include "ofxOpenCv.h"
+#include "ofxXmlSettings.h"
 
+//#define RPI true
 
 #define CAM_WIDTH 640
 #define CAM_HEIGHT 480
@@ -11,7 +14,10 @@
 #define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 768
 
-
+// defaults for config settings
+#define NUM_IMAGES  1
+#define FACE_DROPPED_THRESHOLD 30
+#define NOD_THRESHOLD 25.
 
 // state constants
 #define S_IDLE		1000 // no face recognized
@@ -40,8 +46,6 @@ public:
 
 };
 
-#define NUM_IMAGES 5
-
 class ofApp : public ofBaseApp {
 public:
 	void setup();
@@ -51,9 +55,13 @@ public:
 	void store_image();
 	static void clean_exit(int signal);
 	vector<string> arguments;
+    // idle processing
 	void init_idle();
-	//void update_idle();
 	void draw_idle();
+	void draw_idle1();
+	void draw_idle2();
+
+
 	ofImage idle_image;
 	//ofDirectory imgs;
 	vector <ofImage> gray_images;
@@ -90,4 +98,13 @@ public:
 	float xscale = float(SCREEN_WIDTH) / float(CAM_WIDTH);
 	float yscale = float(SCREEN_HEIGHT) / float(CAM_HEIGHT);
 
+
+	ofxXmlSettings config;
+
+	// config settings follow
+	int face_dropped_threshold;
+	double nod_threshold;
+	// number of images to overlap
+	int num_images;
+	
 };

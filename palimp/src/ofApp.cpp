@@ -5,23 +5,87 @@
 
 using namespace ofxCv;
 using namespace cv;
-#include <signal.h>  
+
 
 void ofApp::setup() {
 
 	// signal handler for clean exit
 
+	// load config file
+	config.loadFile("config.xml");
+	int frameRate;
+	if (config.tagExists("config:frameRate", 0)) {
+		frameRate = config.getValue("config:frameRate", 30);
+		cout << "\nframe rate from config file" << frameRate << "\n";
+	}
+	else {
+		cout << "\nerror reading frameRate from xml config file\n";
+		cout << "\nframe rate from config file" << frameRate << "\n";
+	}
+
+	double smoothingRate;
+	if (config.tagExists("config:smoothingRate", 0)) {
+		smoothingRate = config.getValue("config:smoothingRate", 0.2);
+		cout << "smoothing rate from config file: " << smoothingRate << "\n";
+	}
+	else {
+		cout << "error reading smoothingRate from xml config file\n";
+		smoothingRate = 0.2;
+	}
+
+	int cannyPruning;
+	if (config.tagExists("config:cannyPruning", 0)) {
+		cannyPruning = config.getValue("config:cannyPruning", 0);
+	}
+	else {
+		cout << "error reading cannyPruning from xml config file\n";
+		cannyPruning = 1;
+	}
+
+	if (config.tagExists("config:face_dropped_threshold")) {
+		face_dropped_threshold = config.getValue("config:face_dropped_threshold", FACE_DROPPED_THRESHOLD);
+	}
+	else {
+		cout << "error reading face_dropped_threshold from xml config file\n";
+		face_dropped_threshold = FACE_DROPPED_THRESHOLD;
+	}
+
+	if (config.tagExists("config:nod_threshold")) {
+		nod_threshold = config.getValue("config:nod_threshold", NOD_THRESHOLD);
+	}
+	else {
+		cout << "error reading nod_threshold from xml config file\n";
+		nod_threshold = NOD_THRESHOLD;
+	}
+
+	if (config.tagExists("config:num_images")) {
+		num_images = config.getValue("config:num_images", NUM_IMAGES);
+		cout << "num_images from config file: " << num_images << "\n";
+	}
+	else {
+		cout << "error reading num_images from xml config file\n";
+		num_images = NUM_IMAGES;
+	}
 
 
-  if (signal(SIGUSR1, clean_exit) == SIG_ERR)
-    cout << "can't catch signal\n";
-
+#ifdef RPI
+	if (signal(SIGUSR1, clean_exit) == SIG_ERR) {
+		cout << "can't catch signal\n";
+	}
+#endif
 	ofSetVerticalSync(true);
-	ofSetFrameRate(120);
+	ofSetFrameRate(frameRate);
+
+	// smaller = smoother
+	//finder.getTracker().setSmoothingRate(smoothingRate);
+	// ignore low-contrast regions
+	finder.setCannyPruning((cannyPruning > 0));
+
 	finder.setup("haarcascade_frontalface_default.xml");
 	finder.setPreset(ObjectFinder::Fast);
 	finder.setFindBiggestObject(true);
-	finder.getTracker().setSmoothingRate(.3);
+	finder.getTracker().setSmoothingRate(smoothingRate);
+
 	//cam.listDevices();
 	cam.setDeviceID(0);
 	cam.setup(CAM_WIDTH, CAM_HEIGHT);
@@ -33,12 +97,12 @@ void ofApp::setup() {
 	grayimg.allocate(CAM_WIDTH, CAM_HEIGHT);
 	// something to display if facefinder doesn't
 	grayimg.set(127.0);
-	
+
 	// state machine handling
 	state.set(S_IDLE, 0);
 
 	// allocate array of images 
-	for (int i = 0; i < NUM_IMAGES; i++) {
+	for (int i = 0; i < num_images; i++) {
 		gray_images.push_back(ofImage());
 		gray_rects.push_back(ofRectangle());
 	}
@@ -68,8 +132,8 @@ void ofApp::update() {
 			vel = toOf(v);
 			facerect = finder.getObjectSmoothed(0);
 			// scale by size of camera and face rect to normalize motion
-			vel.x *= 500./facerect.x;
-			vel.y *= 500./facerect.y;
+			vel.x *= 500. / facerect.x;
+			vel.y *= 500. / facerect.y;
 
 			//cout << "velx:" << setw(6) << setprecision(2) << vel.x;
 			//cout << " vely: " << setw(6) << setprecision(2) << vel.y << "\n";
@@ -96,8 +160,9 @@ void ofApp::update() {
 	// state machine handling
 	switch (state.state) {
 	case S_IDLE:
-		if (finder.size() > 0) {
-			// found face, so go to capture mode
+		if (false) { //disable for testing
+//		if (finder.size() > 0) {
+				// found face, so go to capture mode
 			// check for face size here
 			if (state.timeout() && (facerect.width*xscale > ofGetWidth() / 5.0)) {
 
@@ -109,12 +174,12 @@ void ofApp::update() {
 		break;
 
 	case S_HELLO:
-	/*
-		if (finder.size() == 0) {
-			state.set(S_NO_IMG, 2.);
-		}
-		*/
-		//update_idle();
+		/*
+			if (finder.size() == 0) {
+				state.set(S_NO_IMG, 2.);
+			}
+			*/
+			//update_idle();
 		yes_flag = false;
 		avg_xvel = 0;
 		avg_yvel = 0;
@@ -128,7 +193,7 @@ void ofApp::update() {
 			state.set(S_NO_IMG, 2.);
 		}
 		if (finder.size() > 0) {
-			if (avg_yvel > 25.0) {
+			if (avg_yvel > nod_threshold) {
 				state.set(S_THREE, 1.);
 			}
 			//if (avg_xvel > 45.0) {
@@ -182,20 +247,22 @@ void ofApp::update() {
 void ofApp::draw() {
 
 	ofSetHexColor(0xFFFFFFFF);
-	grayimg.draw(0, 0, ofGetWidth(), ofGetHeight());
+	// disable for testing idle
+	// grayimg.draw(0, 0, ofGetWidth(), ofGetHeight());
 
 	ofNoFill();
 
 	ofSetHexColor(0xFFFF00FF);
 	ofDrawRectRounded(facerect.x * xscale, facerect.y*yscale, facerect.width*xscale, facerect.height*yscale, 30.0);
 
-	
+
 	float underface_x = facerect.x * xscale;
 	//float underface_y = min(float(facerect.y + facerect.height + 10.), ofGetHeight() - 30.);
 	float underface_y = std::min(float(facerect.getBottom()*yscale + 20.0), float(ofGetHeight() - 30));
 	switch (state.state) {
 	case S_IDLE:
-		draw_idle();
+		//draw_idle();
+		draw_idle1();
 		break;
 
 	case S_HELLO:
@@ -209,7 +276,7 @@ void ofApp::draw() {
 		break;
 
 	case S_THREE:
-			
+
 		msg.drawString("Ready! 3...", underface_x, underface_y);
 		break;
 
@@ -249,29 +316,32 @@ void ofApp::init_idle() {
 
 	imgs.getSorted();
 	imgs.listDir();
-//	if (imgs.size() > 0) {
-//		cout << "loading color file " << imgs.getPath(imgs.size() - 1) << "\n";
-//		idle_image.load(imgs.getFile(imgs.size()-1));
-//	}	
+	//	if (imgs.size() > 0) {
+	//		cout << "loading color file " << imgs.getPath(imgs.size() - 1) << "\n";
+	//		idle_image.load(imgs.getFile(imgs.size()-1));
+	//	}	
+	int img_count = 0;
+	int num_dir_images = imgs.size() - 1;
+	for (int i = 0; i < std::min(num_images, num_dir_images); i++) {
+		// load most recent images
+		int j = imgs.size() - i - 1;
+		cout << "loading gray file " << imgs.getPath(j) << "\n";
+		gray_images[i].load(imgs.getFile(j));
+		gray_images[i].setImageType(OF_IMAGE_GRAYSCALE);
+		img_count++;
 
-	if (imgs.size() > NUM_IMAGES + 1) {
-		for (int i = 0; i < NUM_IMAGES;  i++) {
-			// load most recent images
-			int j = imgs.size() - i - 1;
-			cout << "loading gray file " << imgs.getPath(j) << "\n";
-			gray_images[i].load(imgs.getFile(j));
-			gray_images[i].setImageType(OF_IMAGE_GRAYSCALE);
-
-			// parse rectangle out of file name
-			ofRectangle r = gray_rects[i];
-			unsigned int x, y, w, h;
-			char timestamp[20];
-			sscanf(imgs.getPath(i).c_str(), "%14sx%3uy%dw%dh%d.png", timestamp, &x, &y, &w, &h);
-			gray_rects[i].set(x, y, w, h);
-			//cout << "timestamp: " << timestamp << "\n";
-			//cout << "x: " << x << " y:" << y << "\n";
-		}
+		// parse rectangle out of file name
+		ofRectangle r = gray_rects[i];
+		unsigned int x, y, w, h;
+		char timestamp[20];
+		sscanf(imgs.getPath(j).c_str(), "%14sx%3uy%3uw%3uh%3u.png", timestamp, &x, &y, &w, &h);
+		gray_rects[i].set(x, y, w, h);
+		cout << "timestamp: " << timestamp << "\n";
+		cout << "x: " << x << " y:" << y << "\n";
+		cout << "w: " << w << " h:" << h << "\n";
 	}
+	num_images = img_count;
+
 }
 
 
@@ -296,14 +366,72 @@ void ofApp::store_image() {
 }
 
 //--------------------------------------------------------------
-void ofApp::draw_idle() {
+void ofApp::draw_idle1() {
 	// list of images in ofDirectory imgs, load and display
+	// idle1: align faces & crossfade
 	ofSetColor(255, 255, 255, 255);
-	for (int i = 0; i < NUM_IMAGES; i++) {
+	for (int i = 0; i < num_images; i++) {
 		//ofSetColor(255, 255, 255, int((100 / (i + 1)) * (sin(float(i)*0.2*ofGetElapsedTimef()) + 1.)));
 		ofSetColor(255, 255, 255, int(100 * (sin(float(i)*0.2*ofGetElapsedTimef()) + 1. / (i + 1))));
 		//ofSetColor(255, 255, 255, 100);
-		gray_images[i].draw(0,0,ofGetWidth(),ofGetHeight());
+		gray_images[i].draw(0, 0, ofGetWidth(), ofGetHeight());
+		//ofSetColor(0,255,0,255);
+		//ofRect(gray_rects[i]);
+	}
+
+	if (yes_flag) {
+		ofSetColor(255, 255, 255, int(127 * (cos(0.5*state.time_elapsed()) + 1)));
+
+		idle_image.draw(0, 0, ofGetWidth(), ofGetHeight());
+	}
+
+	ofSetColor(255, 255, 255, 127);
+	//grayimg.draw(0, 0, ofGetWidth(), ofGetHeight());
+
+	for (int i = 0; i < num_images; i++) {
+		ofSetColor(0, 255, 0, 255);
+		ofRectangle r = gray_rects[i];
+		ofRect(r);
+		//gray_images[i].drawSubsection(x, y, ss, ss, r.width, r.height, r.x, r.y);
+		ofSetColor(255, 255, 255, 127);
+		gray_images[i].draw(0, 0);
+		//x += ss;
+	}
+	return;
+
+	// brady bunch
+	int x = 0;
+	int y = 0;
+	int maxy = -1;
+	for (int i = 0; i < num_images; i++) {
+		//ofSetColor(255, 255, 255, int(127 * (sin(float(i)*0.2*ofGetElapsedTimef()) + 1.)));
+		ofSetColor(255, 255, 255, 255);
+		ofRectangle r = gray_rects[i];
+		//gray_images[i].drawSubsection(x, y, ss, ss, r.width, r.height, r.x, r.y);
+		gray_images[i].drawSubsection(x, y, r.width, r.height, r.x, r.y);
+		//x += ss;
+		if (r.height > maxy) {
+			maxy = r.height;
+		}
+		x += r.width;
+		if (x > ofGetWidth() - 150) {
+			y += maxy;
+			x = 0;
+			maxy = -1;
+		}
+	}
+
+}
+//--------------------------------------------------------------
+void ofApp::draw_idle() {
+	// boring plain image crossfade
+	// list of images in ofDirectory imgs, load and display
+	ofSetColor(255, 255, 255, 255);
+	for (int i = 0; i < num_images; i++) {
+		//ofSetColor(255, 255, 255, int((100 / (i + 1)) * (sin(float(i)*0.2*ofGetElapsedTimef()) + 1.)));
+		ofSetColor(255, 255, 255, int(100 * (sin(float(i)*0.2*ofGetElapsedTimef()) + 1. / (i + 1))));
+		//ofSetColor(255, 255, 255, 100);
+		gray_images[i].draw(0, 0, ofGetWidth(), ofGetHeight());
 		//ofSetColor(0,255,0,255);
 		//ofRect(gray_rects[i]);
 	}
@@ -322,7 +450,7 @@ void ofApp::draw_idle() {
 	int x = 0;
 	int y = 0;
 	int maxy = -1;
-	for (int i = 0; i < NUM_IMAGES; i++) {
+	for (int i = 0; i < num_images; i++) {
 		//ofSetColor(255, 255, 255, int(127 * (sin(float(i)*0.2*ofGetElapsedTimef()) + 1.)));
 		ofSetColor(255, 255, 255, 255);
 		ofRectangle r = gray_rects[i];
@@ -342,13 +470,13 @@ void ofApp::draw_idle() {
 
 }
 
-void ofApp::clean_exit(int signal){
-  // clean exit, signal handler
-  cout << "Exit signal caught, bye!\n";
-  ofExit();
+void ofApp::clean_exit(int signal) {
+	// clean exit, signal handler
+	cout << "Exit signal caught, bye!\n";
+	ofExit();
 }
 void ofApp::keyPressed(int key) {
-		if (key == 'x') {
+	if (key == 'x') {
 		ofExit();
 	}
 	if (key == 's') {
@@ -401,7 +529,7 @@ float StateMach::frac_time_elapsed(void) {
 	if (time_elapsed() > timeout_time) {
 		return 1.0;
 	}
-	return(time_elapsed()/timeout_time);
+	return(time_elapsed() / timeout_time);
 }
 
 
