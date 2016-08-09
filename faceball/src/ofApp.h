@@ -3,8 +3,10 @@
 #include "ofMain.h"
 #include "ofxCv.h"
 #include "ofxXmlSettings.h"
+#include <signal.h>>
 
-#define RPI
+//#define RPI
+
 
 //cam dimensions
 #define CAM_WIDTH 640
@@ -12,7 +14,6 @@
 
 //make 1 pixel face movement SCALE_FACE_POS pixels
 #define SCALE_FACE_POS 2.0
-
 
 //screen dimensions
 #define SCREEN_WIDTH 1024
@@ -171,4 +172,9 @@ public:
 	ofImage saveimg;
 	uint16_t id;
 	ofxXmlSettings config;
+
+	// config settings
+	int dropped_faces_thresh;
+
+
 };

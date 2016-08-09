@@ -7,6 +7,13 @@ using namespace cv;
 
 void ofApp::setup() {
 
+#ifdef RPI
+	if (signal(SIGUSR1, clean_exit) == SIG_ERR) {
+		cout << "can't catch signal\n";
+	}
+#endif
+
+
 	// load config file
 	config.loadFile("config.xml");
 	int frameRate;
