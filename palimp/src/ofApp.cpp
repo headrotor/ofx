@@ -161,7 +161,7 @@ void ofApp::update() {
 	switch (state.state) {
 	case S_IDLE:
 		if (false) { //disable for testing
-//		if (finder.size() > 0) {
+		//if (finder.size() > 0) {
 				// found face, so go to capture mode
 			// check for face size here
 			if (state.timeout() && (facerect.width*xscale > ofGetWidth() / 5.0)) {
@@ -248,7 +248,7 @@ void ofApp::draw() {
 
 	ofSetHexColor(0xFFFFFFFF);
 	// disable for testing idle
-	// grayimg.draw(0, 0, ofGetWidth(), ofGetHeight());
+	grayimg.draw(0, 0, ofGetWidth(), ofGetHeight());
 
 	ofNoFill();
 
@@ -321,7 +321,7 @@ void ofApp::init_idle() {
 	//		idle_image.load(imgs.getFile(imgs.size()-1));
 	//	}	
 	int img_count = 0;
-	int num_dir_images = imgs.size() - 1;
+	int num_dir_images = imgs.size();
 	for (int i = 0; i < std::min(num_images, num_dir_images); i++) {
 		// load most recent images
 		int j = imgs.size() - i - 1;
@@ -370,14 +370,6 @@ void ofApp::draw_idle1() {
 	// list of images in ofDirectory imgs, load and display
 	// idle1: align faces & crossfade
 	ofSetColor(255, 255, 255, 255);
-	for (int i = 0; i < num_images; i++) {
-		//ofSetColor(255, 255, 255, int((100 / (i + 1)) * (sin(float(i)*0.2*ofGetElapsedTimef()) + 1.)));
-		ofSetColor(255, 255, 255, int(100 * (sin(float(i)*0.2*ofGetElapsedTimef()) + 1. / (i + 1))));
-		//ofSetColor(255, 255, 255, 100);
-		gray_images[i].draw(0, 0, ofGetWidth(), ofGetHeight());
-		//ofSetColor(0,255,0,255);
-		//ofRect(gray_rects[i]);
-	}
 
 	if (yes_flag) {
 		ofSetColor(255, 255, 255, int(127 * (cos(0.5*state.time_elapsed()) + 1)));
@@ -389,13 +381,25 @@ void ofApp::draw_idle1() {
 	//grayimg.draw(0, 0, ofGetWidth(), ofGetHeight());
 
 	for (int i = 0; i < num_images; i++) {
-		ofSetColor(0, 255, 0, 255);
 		ofRectangle r = gray_rects[i];
-		ofRect(r);
+		ofPoint fc = gray_rects[i].getCenter();
+		ofPoint cp = ofPoint(ofGetWidth() / 2, ofGetHeight() / 2, 0.);
+
 		//gray_images[i].drawSubsection(x, y, ss, ss, r.width, r.height, r.x, r.y);
+
+		// draw image so faces are centered. Face center is at fc
+		ofPushMatrix();
+		ofSetColor(0, 255, 0, 255);
+		// scale faces to take up 1/3 of screen
+		float scale =  ofGetWidth() / (3*r.width);
+		//scale = 1.0;
+		ofScale(scale, scale, 1.0);
+		ofTranslate((cp.x/scale) - fc.x, (cp.y/scale) - fc.y);
+		ofRect(r);
 		ofSetColor(255, 255, 255, 127);
 		gray_images[i].draw(0, 0);
 		//x += ss;
+		ofPopMatrix();
 	}
 	return;
 
