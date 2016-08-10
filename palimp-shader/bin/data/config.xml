@@ -1,0 +1,8 @@
+<config>
+    <frameRate>32</frameRate>
+    <smoothingRate>0.3</smoothingRate>
+    <cannyPruning>1</cannyPruning>
+    <face_dropped_threshold>10</face_dropped_threshold>
+    <nod_threshold>20</nod_threshold>
+    <num_images>3</num_images>
+</config>
