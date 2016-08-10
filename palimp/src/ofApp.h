@@ -1,12 +1,18 @@
 #pragma once
 
-#include <signal.h>
+
 #include "ofMain.h"
 #include "ofxCv.h"
 #include "ofxOpenCv.h"
 #include "ofxXmlSettings.h"
 
 //#define RPI true
+
+#include <signal.h>
+// for windows (yuck)
+#ifndef SIGUSR1
+#define SIGUSR1 0
+#endif
 
 #define CAM_WIDTH 640
 #define CAM_HEIGHT 480

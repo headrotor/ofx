@@ -10,6 +10,9 @@ using namespace cv;
 void ofApp::setup() {
 
 	// signal handler for clean exit
+	if (signal(SIGUSR1, clean_exit) == SIG_ERR) {
+		cout << "can't catch signal\n";
+	}
 
 	// load config file
 	config.loadFile("config.xml");
@@ -68,23 +71,12 @@ void ofApp::setup() {
 	}
 
 
-#ifdef RPI
-	if (signal(SIGUSR1, clean_exit) == SIG_ERR) {
-		cout << "can't catch signal\n";
-	}
-#endif
 	ofSetVerticalSync(true);
 	ofSetFrameRate(frameRate);
 
 	// smaller = smoother
 	//finder.getTracker().setSmoothingRate(smoothingRate);
 	// ignore low-contrast regions
-	finder.setCannyPruning((cannyPruning > 0));
-
-	finder.setup("haarcascade_frontalface_default.xml");
-	finder.setPreset(ObjectFinder::Fast);
-	finder.setFindBiggestObject(true);
-	finder.getTracker().setSmoothingRate(smoothingRate);
 
 	//cam.listDevices();
 	cam.setDeviceID(0);
@@ -97,6 +89,14 @@ void ofApp::setup() {
 	grayimg.allocate(CAM_WIDTH, CAM_HEIGHT);
 	// something to display if facefinder doesn't
 	grayimg.set(127.0);
+
+	finder.setup("haarcascade_frontalface_default.xml");
+	finder.setPreset(ObjectFinder::Fast);
+	finder.setFindBiggestObject(true);
+	finder.getTracker().setSmoothingRate(smoothingRate);
+	finder.setCannyPruning((cannyPruning > 0));
+
+
 
 	// state machine handling
 	state.set(S_IDLE, 0);
@@ -160,8 +160,8 @@ void ofApp::update() {
 	// state machine handling
 	switch (state.state) {
 	case S_IDLE:
-		if (false) { //disable for testing
-		//if (finder.size() > 0) {
+		//if (false) { //disable for testing
+		if (finder.size() > 0) {
 				// found face, so go to capture mode
 			// check for face size here
 			if (state.timeout() && (facerect.width*xscale > ofGetWidth() / 5.0)) {
@@ -369,6 +369,7 @@ void ofApp::store_image() {
 void ofApp::draw_idle1() {
 	// list of images in ofDirectory imgs, load and display
 	// idle1: align faces & crossfade
+	
 	ofSetColor(255, 255, 255, 255);
 
 	if (yes_flag) {
@@ -378,7 +379,8 @@ void ofApp::draw_idle1() {
 	}
 
 	ofSetColor(255, 255, 255, 127);
-	//grayimg.draw(0, 0, ofGetWidth(), ofGetHeight());
+	grayimg.draw(0, 0, ofGetWidth(), ofGetHeight());
+
 
 	for (int i = 0; i < num_images; i++) {
 		ofRectangle r = gray_rects[i];
@@ -389,18 +391,20 @@ void ofApp::draw_idle1() {
 
 		// draw image so faces are centered. Face center is at fc
 		ofPushMatrix();
-		ofSetColor(0, 255, 0, 255);
 		// scale faces to take up 1/3 of screen
 		float scale =  ofGetWidth() / (3*r.width);
 		//scale = 1.0;
 		ofScale(scale, scale, 1.0);
 		ofTranslate((cp.x/scale) - fc.x, (cp.y/scale) - fc.y);
-		ofRect(r);
-		ofSetColor(255, 255, 255, 127);
+		//ofSetColor(0, 255, 0, 255);
+		//ofRect(r);
+		ofSetColor(255, 255, 255, int(100 * (sin(float(i)*0.2*ofGetElapsedTimef()) + 1. / (i + 1))));
+		//ofSetColor(255, 255, 255, 127);
 		gray_images[i].draw(0, 0);
 		//x += ss;
 		ofPopMatrix();
 	}
+
 	return;
 
 	// brady bunch
@@ -447,8 +451,6 @@ void ofApp::draw_idle() {
 	}
 	ofSetColor(255, 255, 255, 127);
 	grayimg.draw(0, 0, ofGetWidth(), ofGetHeight());
-
-	return;
 
 	// brady bunch
 	int x = 0;
