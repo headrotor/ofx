@@ -8,10 +8,10 @@
 int main(int argc, char *argv[]) {
 
 #ifdef RPI
-	ofSetupOpenGL(SCREEN_WIDTH, SCREEN_HEIGHT, OF_WINDOW);
+	ofSetupOpenGL(SCREEN_WIDTH, SCREEN_HEIGHT, OF_GAME_MODE);
 #else
-	//ofSetupOpenGL(SCREEN_WIDTH, SCREEN_HEIGHT, OF_GAME_MODE);
-	ofSetupOpenGL(SCREEN_WIDTH, SCREEN_HEIGHT, OF_WINDOW);
+	ofSetupOpenGL(SCREEN_WIDTH, SCREEN_HEIGHT, OF_FULLSCREEN);
+	//ofSetupOpenGL(SCREEN_WIDTH, SCREEN_HEIGHT, OF_WINDOW);
 #endif
 	ofApp *app = new ofApp();
 

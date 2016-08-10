@@ -59,7 +59,6 @@ public:
 	void draw();
 	void keyPressed(int key);
 	void store_image();
-	static void clean_exit(int signal);
 	vector<string> arguments;
     // idle processing
 	void init_idle();
@@ -112,5 +111,13 @@ public:
 	double nod_threshold;
 	// number of images to overlap
 	int num_images;
-	
+
+
+	static void static_myHandler(int signal);
+
+	// ugh, c++! Did not link
+	//void clean_exit(int signal);
+
+
+	//static ofApp* instance;
 };

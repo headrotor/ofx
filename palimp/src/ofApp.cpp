@@ -10,7 +10,7 @@ using namespace cv;
 void ofApp::setup() {
 
 	// signal handler for clean exit
-	if (signal(SIGUSR1, clean_exit) == SIG_ERR) {
+	if (signal(SIGUSR1, static_myHandler) == SIG_ERR) {
 		cout << "can't catch signal\n";
 	}
 
@@ -476,11 +476,24 @@ void ofApp::draw_idle() {
 
 }
 
+void ofApp::static_myHandler(int signal)
+{
+  //ugh CPP, did not work!
+  //instance->clean_exit(signal);
+  cout << "Exit signal caught by myHandler, bye!\n";
+  ofExit();
+}
+
+
+/*
 void ofApp::clean_exit(int signal) {
 	// clean exit, signal handler
-	cout << "Exit signal caught, bye!\n";
-	ofExit();
+  cam.close();
+  cout << "Exit signal caught, bye!\n";
+  ofExit();
 }
+*/
+
 void ofApp::keyPressed(int key) {
 	if (key == 'x') {
 		ofExit();
