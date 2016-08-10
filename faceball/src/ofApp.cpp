@@ -16,7 +16,7 @@ void ofApp::setup() {
 
 	// load config file
 	config.loadFile("config.xml");
-	int frameRate;
+
 	if (config.tagExists("config:frameRate", 0)) {
 		frameRate = config.getValue("config:frameRate", 30);
 		cout << "\nframe rate from config file" << frameRate << "\n";
@@ -26,7 +26,6 @@ void ofApp::setup() {
 		cout << "\nframe rate from config file" << frameRate << "\n";
 	}
 
-	double smoothingRate;
 	if (config.tagExists("config:smoothingRate", 0)) {
 		smoothingRate = config.getValue("config:smoothingRate", 0.2);
 		cout << "smoothing rate from config file: " << smoothingRate << "\n";
@@ -36,7 +35,6 @@ void ofApp::setup() {
 		smoothingRate = 0.2;
 	}
 
-	int cannyPruning;
 	if (config.tagExists("config:cannyPruning", 0)) {
 		cannyPruning = config.getValue("config:cannyPruning", 0);
 	}
@@ -45,7 +43,6 @@ void ofApp::setup() {
 		cannyPruning = 1;
 	}
 
-	double forwardSpeed = 10.0;
 	if (config.tagExists("config:forwardSpeed", 0)) {
 		forwardSpeed = config.getValue("config:forwardSpeed", 10.0);
 		cout << "forward speed from config file: " << forwardSpeed << "\n";
@@ -54,13 +51,20 @@ void ofApp::setup() {
 		cout << "error reading forwardSpeed from xml config file\n";
 	}
 
-	double reverseSpeed = 10.0;
 	if (config.tagExists("config:reverseSpeed", 0)) {
 		reverseSpeed = config.getValue("config:reverseSpeed", 10.0);
-		cout << "forward speed from config file: " << reverseSpeed << "\n";
+		cout << "reverse speed from config file: " << reverseSpeed << "\n";
 	}
 	else {
 		cout << "error reading reverseSpeed from xml config file\n";
+	}
+
+	if (config.tagExists("config:english", 0)) {
+		english = config.getValue("config:english", 10.0);
+		cout << "reverse speed from config file: " << english << "\n";
+	}
+	else {
+		cout << "error reading english from xml config file\n";
 	}
 
 
@@ -189,40 +193,32 @@ void ofApp::update() {
 		if ((b.pos.z > Z_CLOSE)) {
 			if (paddleRect.inside(b.pos.x, b.pos.y)) {
 				cout << "Bounce!\n";
-				state.set(S_BACKWARD,0);
-				if (loc_flag) {
-					// get distance of ball impact from paddle center
-					ofPoint bc = ofPoint(b.pos.x, b.pos.y, b.pos.z);
-					ofPoint pc = paddleRect.getCenter();
-					// make it at the same z plane as ball
-					ofVec3f spin = pc - bc;
-					// we don't care about Z distance
-					spin.z = 0;
-					// compute return vector to make ball hit center of goal
-					// move goal center by scaled spin offset. Increasing spin means harder
-					// gc = gc + (4 * spin);
-					ofVec3f straight = goalCenter - b.getCenter();
-					double reverseSpeed = config.getValue("config.reverseSpeed", 0.1);
-					b.bounce(straight * reverseSpeed);
-					break;
+				state.set(S_BACKWARD, 0);
 
-				}
-				else {
-					//cv::Vec2f v = finder.getVelocity(0);
-					//ofVec2f spin = toOf(v);
+				// get distance of ball impact from paddle center
+				ofVec3f ballCenter = b.getCenter();
+				ofVec3f paddleCenter = paddleRect.getCenter();
+				// make it at the same z plane as ball
 
-				}
+				ofVec3f offset = paddleCenter - ballCenter;
+
+				paddleCenter.x = ballCenter.z;
+				// compute return vector to make ball hit center of goal
+				// offset by how much we were off from paddle center
+				ofVec3f straight = (goalCenter + offset*english) - b.getCenter();
+				b.bounce(straight * reverseSpeed);
+				break;
 
 			}
 			else {
-				state.set(S_IDLE,0);
+				state.set(S_IDLE, 0);
 			}
 
 		}
 		break;
 	case S_BACKWARD:
-		cout << "ball:" << b.getCenter() << " Z " << b.pos.z;
-		cout << "\n goal " << goalCenter <<  "\n";
+		//cout << "ball:" << b.getCenter() << " Z " << b.pos.z;
+		//cout << "\n goal " << goalCenter <<  "\n";
 
 		if (b.pos.z < Z_FIELD_END) {
 			b.reset();
@@ -246,20 +242,14 @@ void ofApp::update() {
 void ofApp::draw_world(void) {
 	// draw the score and the game world
 	//draw score
-
-
-  
 	for (int i = 0; i<arguments.size(); ++i) {
 		ofDrawBitmapString(arguments.at(i), 20.0f, 20.0f*i);
 	}
 
-	ofPushMatrix();
-	ofTranslate(0, 0, 0);
 	ofSetColor(0, 255, 0);//stroke color 
 	sprintf(score_str, "SCORE %02d", score);
-	font.drawString(score_str, ofGetWidth() - 220, 50);
+	font.drawString(score_str, ofGetWidth() - 300, 80);
 	//font.drawStringAsShapes("test", ofGetWidth() / 2 + 20, ofGetHeight() / 2);
-	ofPopMatrix();
 
 	// draw goal
 	ofPushMatrix();
@@ -292,10 +282,9 @@ void ofApp::draw() {
 
 	debug.addVertex(bc);
 	debug.addVertex(gc);
-	ofSetColor(255, 0, 0);
-	debug.draw();
-
-	ofDrawBitmapString("fps: " + ofToString(ofGetFrameRate()), 50, 100);
+	//ofSetColor(255, 0, 0);
+	//debug.draw();
+	//ofDrawBitmapString("fps: " + ofToString(ofGetFrameRate()), 50, 100);
 
 
 	if (drawcam) {

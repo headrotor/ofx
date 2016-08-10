@@ -2,6 +2,7 @@
     <frameRate>32</frameRate>
     <smoothingRate>0.3</smoothingRate>
     <cannyPruning>1</cannyPruning>
-    <forwardSpeed>700.0</forwardSpeed>
-    <reverseSpeed>100</reverseSpeed>
+    <forwardSpeed>0.5</forwardSpeed>
+    <reverseSpeed>1.0</reverseSpeed>
+    <english>0.3</english>
 </config>

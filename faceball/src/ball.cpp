@@ -26,8 +26,15 @@ void Ball::set_color(ofColor c) {
 }
 
 void Ball::reset() {
-	vel.set(ofRandomf()*1., ofRandomf()*0.5, forwardSpeed);
-	pos.set(ofGetWidth()/2 + ofRandomf()*100, ofGetHeight()/2 + ofRandomf()*100., Z_FAR);
+
+
+	pos.set(ofGetWidth()/2 + ofRandomf()*1000, ofGetHeight()/2 + ofRandomf()*1000., Z_FAR);
+	ofVec3f dest = ofPoint(ofGetWidth()*ofRandomuf(),  ofGetHeight()*ofRandomuf(), Z_NEAR);
+	// figure out vector from ball origin to random place in viewer plane
+	ofVec3f traj = dest - pos;
+	vel = traj *forwardSpeed;
+	// figure out vector from ball origin to random place in viewer plane
+
 }
 
 void Ball::draw() {
@@ -52,13 +59,6 @@ void Ball::update(int state) {
 	//cout << "ball " << pos.z << "\n";
 }
 
-void Ball::set_velxy(float xv, float yv) {
-	vel.x = xv;
-	vel.y = yv;
-}
-void Ball::set_velz(float zv) {
-	vel.z = zv;
-}
 void Ball::bounce(ofVec3f spin) {
 	cout << "bounce spin: " << spin;
 	//spin.z = -spin.z;

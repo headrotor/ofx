@@ -3,10 +3,15 @@
 #include "ofMain.h"
 #include "ofxCv.h"
 #include "ofxXmlSettings.h"
-#include <signal.h>>
+#include <signal.h>
 
 //#define RPI
+#undef RPI
 
+// for windows (yuck)
+#ifndef SIGUSR1
+#define SIGUSR1 0
+#endif
 
 //cam dimensions
 #define CAM_WIDTH 640
@@ -34,7 +39,8 @@
 class  Ball {
 public:
 	ofIcoSpherePrimitive isp;
-	ofPoint pos, vel;
+	// position and velocity of ball
+	ofVec3f pos, vel;
 	// convert sphere to mesh for manipulations
 	ofMesh* bmesh;
 
@@ -43,8 +49,6 @@ public:
 	void update(int state);
 	void init(double speed);
 
-	void set_velxy(float vx, float vy);
-	void set_velz(float vz);
 	void bounce(ofVec3f spin);
 	void reset();
 	void set_color(ofColor c);
@@ -108,8 +112,7 @@ public:
 	// flags for testing behaviors
 	// use face velocity to control ball direction
 	bool vel_flag = false;
-	// use location to control ball direction
-	bool loc_flag = true;
+
 
 	// precompute goal center
 	ofVec3f goalCenter;
@@ -175,6 +178,12 @@ public:
 
 	// config settings
 	int dropped_faces_thresh;
-
+	int cannyPruning;
+	int frameRate;
+	double smoothingRate;
+	double forwardSpeed;
+	double reverseSpeed;
+	double english; // how much off-center paddle affects ball target; 
+	// english = 0 -> always hit center of target
 
 };
